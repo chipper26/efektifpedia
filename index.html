@@ -189,61 +189,47 @@
       <div class="row text-center mb-3">
         <div class="col">
           <h2>Hubungi Kami</h2>
-        </div>
-      </div>
-      <div class="row justify-content-center">
-        <div class="col-md-8">
-          <form>
-            <div class="mb-3">
-              <label for="name" class="form-label">Nama Lengkap</label>
-              <input type="text" class="form-control" id="name" aria-describedby="name">
-             
-            </div>
-
-            <div class="mb-3">
-              <label for="Email" class="form-label">Email</label>
-              <input type="email" class="form-control" id="email" aria-describedby="email">
-              
-            </div>
-           
-            <div class="mb-3">
-              <label for="Pesan" class="form-label">Pesan</label>
-              <textarea class="form-control" id="Pesan" rows="3"></textarea>
-            </div>
-             
-            <button type="submit" class="btn btn-primary">Kirim</button>
-          </form>
-        </div>
-      </div>
+       <form id="contactForm">
+    <div class="mb-3">
+      <label for="name" class="form-label">Nama Lengkap</label>
+      <input type="text" class="form-control" id="name" name="name">
     </div>
-
+    <div class="mb-3">
+      <label for="email" class="form-label">Email</label>
+      <input type="email" class="form-control" id="email" name="email">
+    </div>
+    <div class="mb-3">
+      <label for="Pesan" class="form-label">Pesan</label>
+      <textarea class="form-control" id="Pesan" name="pesan" rows="3"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Kirim</button>
+  </form>
+          
      <!-- sript untuk konek google sheet -->
 
     <script>
-        document.getElementById('contactForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            var form = document.getElementById('contactForm');
-            var data = new FormData(form);
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://script.google.com/macros/s/AKfycbylh_Kjp1rhNEoyKdGyL_PDXQ5qlBwr9kk3zvlDO6dYZHnZA2r5do84vnED73hvNqjC/exec', true); // Ganti 'WEB_APP_URL' dengan URL dari Google Apps Script deployment
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-            var params = new URLSearchParams();
-            for (const pair of data) {
-                params.append(pair[0], pair[1]);
-            }
-
-            xhr.send(params.toString());
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    alert('Pesan berhasil dikirim!');
-                } else {
-                    alert('Terjadi kesalahan, coba lagi.');
-                }
-            };
-        });
+       <script>
+    document.getElementById('contactForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      var form = document.getElementById('contactForm');
+      var data = new FormData(form);
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://script.google.com/macros/s/AKfycbxG1kYS_tFuWJCtvALslvZhaCw3FFfdBJWe_mXbaWug8s5zAdjiRgf4DDAwb_EvafAp/exec', true);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      var params = new URLSearchParams();
+      for (const pair of data) {
+        params.append(pair[0], pair[1]);
+      }
+      xhr.send(params.toString());
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          alert('Pesan berhasil dikirim!');
+        } else {
+          alert('Terjadi kesalahan, coba lagi.');
+        }
+      };
+    });
+  </script>
     </script>
 
 

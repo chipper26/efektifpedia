@@ -184,68 +184,48 @@
 
   <!-- contact -->
 
-  <section id="contact">
+ <section id="contact">
     <div class="container">
-      <div class="row text-center mb-3">
-        <div class="col">
-          <h2>Hubungi Kami</h2>
+        <div class="row text-center mb-3">
+            <div class="col">
+                <h2>Hubungi Kami</h2>
+            </div>
         </div>
-      </div>
-      <div class="row justify-content-center">
-        <div class="col-md-8">
-          <form>
-            <div class="mb-3">
-              <label for="name" class="form-label">Nama Lengkap</label>
-              <input type="text" class="form-control" id="name" aria-describedby="name">
-             
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <form id="contact-form" name="contact-form">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nama Lengkap</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="message" class="form-label">Pesan</label>
+                        <textarea class="form-control" id="message" name="message" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Kirim</button>
+                </form>
+                <div id="status"></div>
             </div>
-
-            <div class="mb-3">
-              <label for="Email" class="form-label">Email</label>
-              <input type="email" class="form-control" id="email" aria-describedby="email">
-              
-            </div>
-           
-            <div class="mb-3">
-              <label for="Pesan" class="form-label">Pesan</label>
-              <textarea class="form-control" id="Pesan" rows="3"></textarea>
-            </div>
-             
-            <button type="submit" class="btn btn-primary">Kirim</button>
-          </form>
         </div>
-      </div>
     </div>
+</section>
 
-     <!-- sript untuk konek google sheet -->
+<!-- Google Apps Script integration -->
+<script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbynLTQ-XgoG9l4AOPgyGnVER2TzN7mhRckshwzYT88Cm7JL8o0ZQnuBinrO2Xb_vx9N/exec'; // URL dari Google Apps Script deployment
+    const form = document.forms['contact-form'];
 
-    <script>
-        document.getElementById('contactForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            var form = document.getElementById('contactForm');
-            var data = new FormData(form);
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', 'https://script.google.com/macros/s/AKfycbylh_Kjp1rhNEoyKdGyL_PDXQ5qlBwr9kk3zvlDO6dYZHnZA2r5do84vnED73hvNqjC/exec', true); // Ganti 'WEB_APP_URL' dengan URL dari Google Apps Script deployment
-            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-            var params = new URLSearchParams();
-            for (const pair of data) {
-                params.append(pair[0], pair[1]);
-            }
-
-            xhr.send(params.toString());
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    alert('Pesan berhasil dikirim!');
-                } else {
-                    alert('Terjadi kesalahan, coba lagi.');
-                }
-            };
-        });
-    </script>
-
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        fetch(scriptURL, { method: 'POST', body: new FormData(form)})
+            .then(response => document.getElementById('status').innerHTML = 'Pesan berhasil dikirim!')
+            .catch(error => document.getElementById('status').innerHTML = 'Terjadi kesalahan. Pesan gagal dikirim.');
+    });
+</script>
 
      <!-- akhir script -->
 

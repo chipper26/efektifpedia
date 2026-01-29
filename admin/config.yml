@@ -2,6 +2,9 @@ backend:
   name: github
   repo: chipper26/efektifpedia
   branch: master
+  auth_endpoint: https://decap-cms-github-oauth.netlify.app/auth
+
+site_url: https://chipper26.github.io/efektifpedia/
 
 media_folder: "img/uploads"
 public_folder: "/img/uploads"
@@ -9,7 +12,7 @@ public_folder: "/img/uploads"
 collections:
   - name: "blog"
     label: "Blog"
-    folder: "posts"
+    folder: "blog"
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:

@@ -1,5 +1,4 @@
 baseURL = "https://chipper26.github.io/efektifpedia/"
-
 languageCode = "id-id"
 title = "efektifpedia"
 
@@ -7,7 +6,7 @@ title = "efektifpedia"
 pagerSize = 5
 
 [params]
-  description = "Jasa penulisan artikel profesional"
+description = "Jasa penulisan artikel profesional"
 
 [permalinks]
-  blog = "/blog/:slug/"
+blog = "/blog/:slug/"

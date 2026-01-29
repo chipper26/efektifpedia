@@ -1,0 +1,14 @@
+{{ define "main" }}
+<section class="landing-blog">
+  <h2>Artikel Terbaru</h2>
+
+  {{ range first 3 (where .Site.RegularPages "Section" "blog") }}
+  <article>
+    <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+    <p>{{ .Params.description }}</p>
+  </article>
+  {{ end }}
+
+  <a href="/blog" class="btn">Lihat Semua Artikel</a>
+</section>
+{{ end }}

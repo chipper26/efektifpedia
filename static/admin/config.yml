@@ -1,0 +1,21 @@
+local_backend: true
+
+backend:
+  name: github
+  repo: chipper26/efektifpedia
+  branch: main
+
+media_folder: "static/img/blog"
+public_folder: "/img/blog"
+
+collections:
+  - name: "blog"
+    label: "Blog"
+    folder: "content/blog"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Judul", name: "title", widget: "string" }
+      - { label: "Tanggal", name: "date", widget: "datetime" }
+      - { label: "Deskripsi", name: "description", widget: "string", required: false }
+      - { label: "Konten", name: "body", widget: "markdown" }

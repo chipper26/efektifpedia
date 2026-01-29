@@ -2,10 +2,9 @@ backend:
   name: github
   repo: chipper26/efektifpedia
   branch: master
-  auth_endpoint: https://decap-cms-github-oauth.netlify.app/auth
-  client_id: Ov23liqyZTCFwXfKnm8k
 
 site_url: https://chipper26.github.io/efektifpedia/
+display_url: https://chipper26.github.io/efektifpedia/
 
 media_folder: "img/uploads"
 public_folder: "/img/uploads"

@@ -1,10 +1,10 @@
 {{ define "main" }}
-<article class="post">
   <h1>{{ .Title }}</h1>
-  <small>{{ .Date.Format "02 Jan 2006" }}</small>
+  <p><small>{{ .Date.Format "02 Jan 2006" }}</small></p>
 
-  <div class="post-content">
+  <article>
     {{ .Content }}
-  </div>
-</article>
+  </article>
+
+  <p><a href="/efektifpedia/blog/">← Kembali ke Blog</a></p>
 {{ end }}

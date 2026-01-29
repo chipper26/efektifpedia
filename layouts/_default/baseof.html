@@ -2,23 +2,11 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>{{ block "title" . }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
-  <meta name="description" content="{{ .Params.description | default .Site.Params.description }}">
-  <link rel="stylesheet" href="/style.css">
+  <title>{{ block "title" . }}{{ .Site.Title }}{{ end }}</title>
 </head>
 <body>
 
-<header class="site-header">
-  <a href="/" class="logo">{{ .Site.Title }}</a>
-</header>
-
-<main class="container">
   {{ block "main" . }}{{ end }}
-</main>
-
-<footer class="site-footer">
-  © {{ now.Year }} {{ .Site.Title }}
-</footer>
 
 </body>
 </html>

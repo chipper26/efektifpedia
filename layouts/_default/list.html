@@ -1,23 +1,15 @@
 {{ define "main" }}
-<h1>Artikel Terbaru</h1>
+  <h1>Blog</h1>
 
-{{ range .Paginator.Pages }}
-<article class="post-list">
-  <h2>
-    <a href="{{ .RelPermalink }}">{{ .Title }}</a>
-  </h2>
-  <small>{{ .Date.Format "02 Jan 2006" }}</small>
-  <p>{{ .Params.description }}</p>
-</article>
-{{ end }}
-
-<nav class="pagination">
-  {{ if .Paginator.HasPrev }}
-    <a href="{{ .Paginator.Prev.URL }}">← Sebelumnya</a>
+  {{ if .Pages }}
+    <ul>
+      {{ range .Pages }}
+        <li>
+          <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+        </li>
+      {{ end }}
+    </ul>
+  {{ else }}
+    <p>Belum ada artikel.</p>
   {{ end }}
-
-  {{ if .Paginator.HasNext }}
-    <a href="{{ .Paginator.Next.URL }}">Selanjutnya →</a>
-  {{ end }}
-</nav>
 {{ end }}

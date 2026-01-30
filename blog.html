@@ -7,39 +7,53 @@
     <link rel="stylesheet" href="style.css">
     <title>Blog - efektifpedia</title>
     <style>
-      /* Layout Fix: Sticky Footer */
       html, body { height: 100%; margin: 0; }
-      body { display: flex; flex-direction: column; background-color: #f4f7f6; padding-top: 80px; }
+      body { display: flex; flex-direction: column; background-color: #f4f7f6; padding-top: 70px; }
       .content-wrapper { flex: 1 0 auto; }
       footer { flex-shrink: 0; }
 
-      /* Card Style */
-      .card-blog { border: none; background: none; border-bottom: 1px solid #dee2e6; margin-bottom: 20px; padding-bottom: 20px; transition: 0.3s; }
-      .card-blog:hover { opacity: 0.8; }
-      .card-blog img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; background-color: #eee; }
+      /* Navbar Styling */
+      .navbar-brand { font-weight: bold; letter-spacing: 1px; }
       
-      /* Typography & Badges */
+      /* Card Blog Styling */
+      .card-blog { border: none; background: none; border-bottom: 1px solid #dee2e6; margin-bottom: 20px; padding-bottom: 20px; }
+      .card-blog img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; background-color: #eee; }
       .category-badge { background: #e9ecef; color: #0d6efd; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 10px; display: inline-block; }
       .blog-title { font-weight: 700; color: #212529; text-decoration: none; font-size: 1.25rem; line-height: 1.3; display: block; }
       .blog-title:hover { color: #0d6efd; }
       .meta-info { font-size: 0.85rem; color: #6c757d; margin-top: 10px; }
       
-      /* Sidebar Style */
+      /* Sidebar Styling */
       .sidebar-title { font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #0d6efd; padding-bottom: 5px; margin-bottom: 15px; font-size: 0.9rem; }
       .popular-item { list-style: none; padding: 0; }
       .popular-item li { padding: 10px 0; border-bottom: 1px solid #eee; display: flex; align-items: flex-start; }
       .popular-item li::before { content: "●"; color: #0d6efd; margin-right: 10px; font-size: 0.8rem; }
       .popular-link { text-decoration: none; color: #333; font-weight: 500; font-size: 0.95rem; line-height: 1.4; }
       .popular-link:hover { color: #0d6efd; }
+
+      /* Responsivitas untuk layar HP */
+      @media (max-width: 768px) {
+        .card-blog img { height: 220px; }
+        .blog-title { font-size: 1.1rem; }
+      }
     </style>
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
       <div class="container">
         <a class="navbar-brand" href="./">efektifpedia</a>
-        <div class="navbar-nav ms-auto">
-          <a class="nav-link" href="./">HOME</a>
-          <a class="nav-link active" href="blog.html">BLOG</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="./">HOME</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="blog.html">BLOG</a>
+            </li>
+          </ul>
         </div>
       </div>
     </nav>
@@ -60,8 +74,7 @@
           <div class="col-lg-4 mt-5 mt-lg-0">
             <div class="sticky-top" style="top: 90px;">
               <h5 class="sidebar-title">ARTIKEL TERPOPULER</h5>
-              <ul class="popular-item" id="popular-container">
-                </ul>
+              <ul class="popular-item" id="popular-container"></ul>
             </div>
           </div>
         </div>
@@ -72,6 +85,8 @@
       <p class="m-0">created by 🔶 irawan</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
       async function fetchPosts() {
         const repo = "chipper26/efektifpedia";
@@ -91,17 +106,14 @@
             const rawRes = await fetch(file.download_url);
             const markdown = await rawRes.text();
             
-            // Default Values
             let title = file.name.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace('.md', '').replace(/-/g, ' ');
             let thumb = ""; 
             let author = "Tim Efektifpedia";
             let category = "Edukasi";
-            let dateStr = "Baru saja";
+            let dateStr = "30 Januari 2026";
 
-            // Extract Frontmatter Data
             if (markdown.startsWith('---')) {
               const fm = markdown.split('---')[1];
-              
               const tMatch = fm.match(/title:\s*["']?(.*?)["']?$/m);
               const thumbMatch = fm.match(/thumbnail:\s*["']?(.*?)["']?$/m);
               const authMatch = fm.match(/author:\s*["']?(.*?)["']?$/m);
@@ -112,7 +124,6 @@
               if (authMatch) author = authMatch[1];
               if (catMatch) category = catMatch[1];
               
-              // Image Logic: Connect to Raw GitHub URL
               if (thumbMatch && thumbMatch[1]) {
                 let path = thumbMatch[1].trim();
                 if (path.startsWith('/')) path = path.substring(1);
@@ -129,29 +140,20 @@
 
             const postUrl = `post.html?file=${file.name}`;
 
-            // Template untuk artikel utama
             container.innerHTML += `
               <div class="card card-blog">
-                <div class="row align-items-center">
-                  <div class="col-md-4 mb-3 mb-md-0">
-                    <img src="${thumb}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'" alt="cover">
-                  </div>
-                  <div class="col-md-8">
-                    <span class="category-badge">${category}</span>
-                    <a href="${postUrl}" class="blog-title text-capitalize">${title}</a>
-                    <div class="meta-info">Oleh ${author} — ${dateStr}</div>
-                  </div>
-                </div>
+                <img src="${thumb}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'" class="mb-3" alt="cover">
+                <span class="category-badge">${category}</span>
+                <a href="${postUrl}" class="blog-title text-capitalize">${title}</a>
+                <div class="meta-info">Oleh ${author} — ${dateStr}</div>
               </div>`;
 
-            // Template untuk sidebar terpopuler (ambil 6 teratas)
             if(index < 6) {
-              popularContainer.innerHTML += `
-                <li><a href="${postUrl}" class="popular-link">${title}</a></li>`;
+              popularContainer.innerHTML += `<li><a href="${postUrl}" class="popular-link text-capitalize">${title}</a></li>`;
             }
           }
         } catch (e) {
-          container.innerHTML = "<p class='text-center p-5'>Gagal memuat artikel. Silakan coba lagi nanti.</p>";
+          container.innerHTML = "<p class='text-center p-5'>Gagal memuat artikel.</p>";
         }
       }
       fetchPosts();

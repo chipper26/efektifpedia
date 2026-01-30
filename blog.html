@@ -7,33 +7,16 @@
     <link rel="stylesheet" href="style.css">
     <title>Blog - efektifpedia</title>
     <style>
-      /* Trik CSS agar footer dipaksa ke bawah */
-      html, body {
-        height: 100%;
-        margin: 0;
-      }
-      body { 
-        display: flex; 
-        flex-direction: column; 
-        background-color: #f4f7f6; 
-        padding-top: 80px; 
-      }
-      .content-wrapper {
-        flex: 1 0 auto; /* Ini yang mendorong footer ke bawah */
-      }
-      footer {
-        flex-shrink: 0;
-      }
-
-      /* Style Konten */
-      .card-blog { border: none; transition: 0.3s; background: none; border-bottom: 1px solid #dee2e6; border-radius: 0; margin-bottom: 20px; padding-bottom: 20px; }
-      .card-blog img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; }
+      html, body { height: 100%; margin: 0; }
+      body { display: flex; flex-direction: column; background-color: #f4f7f6; padding-top: 80px; }
+      .content-wrapper { flex: 1 0 auto; }
+      footer { flex-shrink: 0; }
+      .card-blog { border: none; background: none; border-bottom: 1px solid #dee2e6; margin-bottom: 20px; padding-bottom: 20px; }
+      .card-blog img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; background-color: #ddd; }
       .category-badge { background: #e9ecef; color: #0d6efd; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 10px; display: inline-block; }
       .blog-title { font-weight: 700; color: #212529; text-decoration: none; font-size: 1.25rem; line-height: 1.3; }
       .blog-title:hover { color: #0d6efd; }
       .meta-info { font-size: 0.85rem; color: #6c757d; margin-top: 10px; }
-      
-      /* Sidebar Style */
       .sidebar-title { font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #0d6efd; padding-bottom: 5px; margin-bottom: 15px; font-size: 0.9rem; }
       .popular-item { list-style: none; padding: 0; }
       .popular-item li { padding: 10px 0; border-bottom: 1px solid #eee; display: flex; align-items: flex-start; }
@@ -65,7 +48,6 @@
               </div>
             </div>
           </div>
-
           <div class="col-lg-4 mt-5 mt-lg-0">
             <div class="sticky-top" style="top: 90px;">
               <h5 class="sidebar-title">ARTIKEL TERPOPULER</h5>
@@ -95,34 +77,62 @@
           container.innerHTML = '';
           popularContainer.innerHTML = '';
 
-          posts.forEach((file, index) => {
-            const titleClean = file.name.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace('.md', '').replace(/-/g, ' ');
+          // Loop untuk ambil data tiap file
+          for (const [index, file] of posts.entries()) {
+            const rawRes = await fetch(file.download_url);
+            const markdown = await rawRes.text();
+            
+            // Default Values
+            let title = file.name.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace('.md', '').replace(/-/g, ' ');
+            let thumb = "https://via.placeholder.com/300x200?text=Efektifpedia";
+            let author = "Tim Efektifpedia";
+            let category = "Edukasi";
+            let dateStr = "Januari 2026";
+
+            // Ekstrak Frontmatter
+            if (markdown.startsWith('---')) {
+              const parts = markdown.split('---');
+              const fm = parts[1];
+              
+              const tMatch = fm.match(/title:\s*(.*)/i);
+              if (tMatch) title = tMatch[1].replace(/['"]/g, '');
+              
+              const thumbMatch = fm.match(/thumbnail:\s*(.*)/i);
+              if (thumbMatch) thumb = thumbMatch[1].replace(/['"]/g, '');
+
+              const authMatch = fm.match(/author:\s*(.*)/i);
+              if (authMatch) author = authMatch[1].replace(/['"]/g, '');
+
+              const catMatch = fm.match(/category:\s*(.*)/i);
+              if (catMatch) category = catMatch[1].replace(/['"]/g, '');
+
+              const dMatch = fm.match(/date:\s*(.*)/i);
+              if (dMatch) {
+                const d = new Date(dMatch[1]);
+                dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+              }
+            }
+
             const postUrl = `post.html?file=${file.name}`;
 
             container.innerHTML += `
               <div class="card card-blog">
                 <div class="row align-items-center">
                   <div class="col-md-4 mb-3 mb-md-0">
-                    <img src="https://via.placeholder.com/300x200?text=Efektifpedia" alt="cover">
+                    <img src="${thumb}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'" alt="cover">
                   </div>
                   <div class="col-md-8">
-                    <span class="category-badge">Edukasi</span>
-                    <a href="${postUrl}" class="blog-title text-capitalize">${titleClean}</a>
-                    <div class="meta-info">
-                      Oleh Tim Efektifpedia — Januari 2026
-                    </div>
+                    <span class="category-badge">${category}</span>
+                    <a href="${postUrl}" class="blog-title text-capitalize">${title}</a>
+                    <div class="meta-info">Oleh ${author} — ${dateStr}</div>
                   </div>
                 </div>
-              </div>
-            `;
+              </div>`;
 
             if(index < 6) {
-              popularContainer.innerHTML += `
-                <li><a href="${postUrl}" class="popular-link">${titleClean}</a></li>
-              `;
+              popularContainer.innerHTML += `<li><a href="${postUrl}" class="popular-link">${title}</a></li>`;
             }
-          });
-
+          }
         } catch (e) {
           container.innerHTML = "<p class='text-center'>Gagal memuat artikel.</p>";
         }

@@ -7,7 +7,25 @@
     <link rel="stylesheet" href="style.css">
     <title>Blog - efektifpedia</title>
     <style>
-      body { background-color: #f4f7f6; padding-top: 80px; }
+      /* Trik CSS agar footer dipaksa ke bawah */
+      html, body {
+        height: 100%;
+        margin: 0;
+      }
+      body { 
+        display: flex; 
+        flex-direction: column; 
+        background-color: #f4f7f6; 
+        padding-top: 80px; 
+      }
+      .content-wrapper {
+        flex: 1 0 auto; /* Ini yang mendorong footer ke bawah */
+      }
+      footer {
+        flex-shrink: 0;
+      }
+
+      /* Style Konten */
       .card-blog { border: none; transition: 0.3s; background: none; border-bottom: 1px solid #dee2e6; border-radius: 0; margin-bottom: 20px; padding-bottom: 20px; }
       .card-blog img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; }
       .category-badge { background: #e9ecef; color: #0d6efd; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 10px; display: inline-block; }
@@ -35,29 +53,30 @@
       </div>
     </nav>
 
-    <div class="container mt-4">
-      <div class="row">
-        <div class="col-lg-8">
-          <h5 class="sidebar-title">POSTINGAN TERBARU</h5>
-          <div id="blog-container">
-            <div class="text-center p-5">
-              <div class="spinner-border text-primary"></div>
-              <p>Memuat artikel...</p>
+    <div class="content-wrapper">
+      <div class="container mt-4">
+        <div class="row">
+          <div class="col-lg-8">
+            <h5 class="sidebar-title">POSTINGAN TERBARU</h5>
+            <div id="blog-container">
+              <div class="text-center p-5">
+                <div class="spinner-border text-primary"></div>
+                <p>Memuat artikel...</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="col-lg-4 mt-5 mt-lg-0">
-          <div class="sticky-top" style="top: 90px;">
-            <h5 class="sidebar-title">ARTIKEL TERPOPULER</h5>
-            <ul class="popular-item" id="popular-container">
-              </ul>
+          <div class="col-lg-4 mt-5 mt-lg-0">
+            <div class="sticky-top" style="top: 90px;">
+              <h5 class="sidebar-title">ARTIKEL TERPOPULER</h5>
+              <ul class="popular-item" id="popular-container"></ul>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <footer class="bg-primary text-white text-center py-3 mt-5">
+    <footer class="bg-primary text-white text-center py-3">
       <p class="m-0">created by 🔶 irawan</p>
     </footer>
 
@@ -71,19 +90,15 @@
         try {
           const response = await fetch(`https://api.github.com/repos/${repo}/contents/${folder}`);
           const files = await response.json();
-          
-          // Filter hanya file .md dan urutkan dari yang terbaru
           const posts = files.filter(f => f.name.endsWith('.md')).reverse();
           
           container.innerHTML = '';
           popularContainer.innerHTML = '';
 
           posts.forEach((file, index) => {
-            // Logic Judul dari Nama File
             const titleClean = file.name.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace('.md', '').replace(/-/g, ' ');
             const postUrl = `post.html?file=${file.name}`;
 
-            // 1. Render Kolom Utama (Posting Terbaru)
             container.innerHTML += `
               <div class="card card-blog">
                 <div class="row align-items-center">
@@ -92,7 +107,7 @@
                   </div>
                   <div class="col-md-8">
                     <span class="category-badge">Edukasi</span>
-                    <a href="${postUrl}" class="blog-title">${titleClean}</a>
+                    <a href="${postUrl}" class="blog-title text-capitalize">${titleClean}</a>
                     <div class="meta-info">
                       Oleh Tim Efektifpedia — Januari 2026
                     </div>
@@ -101,7 +116,6 @@
               </div>
             `;
 
-            // 2. Render Sidebar (Top 5 Terpopuler/Terbaru)
             if(index < 6) {
               popularContainer.innerHTML += `
                 <li><a href="${postUrl}" class="popular-link">${titleClean}</a></li>
@@ -110,7 +124,7 @@
           });
 
         } catch (e) {
-          container.innerHTML = "<p>Gagal memuat artikel.</p>";
+          container.innerHTML = "<p class='text-center'>Gagal memuat artikel.</p>";
         }
       }
       fetchPosts();

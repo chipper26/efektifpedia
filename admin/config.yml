@@ -2,7 +2,8 @@ backend:
   name: github
   repo: chipper26/efektifpedia
   branch: main
-  base_url: https://api.sveltia.org # Pastikan tertulis sveltia.org
+  # Alamat di bawah ini harus teliti ejaannya:
+  base_url: https://api.sveltia.org
   auth_endpoint: /auth
 
 site_url: https://chipper26.github.io/efektifpedia/

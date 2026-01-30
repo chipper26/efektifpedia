@@ -2,7 +2,7 @@ backend:
   name: github
   repo: chipper26/efektifpedia
   branch: main
-  # Menggunakan gateway Sveltia agar bisa login tanpa Netlify
+  # Gunakan gateway Sveltia yang sudah kamu daftarkan di callback URL tadi
   base_url: https://api.sveltia.org
   auth_endpoint: /auth
 

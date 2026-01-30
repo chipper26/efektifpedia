@@ -9,7 +9,10 @@
     <style>
       body { display: flex; flex-direction: column; min-height: 100vh; padding-top: 80px; }
       .content-wrapper { flex: 1; }
-      #post-content img { max-width: 100%; height: auto; border-radius: 8px; }
+      #post-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 20px 0; }
+      /* Gaya agar tulisan lebih enak dibaca */
+      #post-content { line-height: 1.8; font-size: 1.1rem; color: #333; }
+      #post-content h1, #post-content h2, #post-content h3 { color: #0d6efd; margin-top: 1.5rem; }
     </style>
   </head>
   <body>
@@ -25,20 +28,20 @@
 
     <div class="content-wrapper container mt-4 mb-5">
       <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-8 shadow-sm p-4 bg-white rounded">
           <div id="post-loading" class="text-center">
             <div class="spinner-border text-primary"></div>
             <p>Memuat artikel...</p>
           </div>
           <article id="post-content"></article>
-          <hr>
+          <hr class="mt-5">
           <a href="blog.html" class="btn btn-outline-primary">&larr; Kembali ke Blog</a>
         </div>
       </div>
     </div>
 
     <footer class="bg-primary text-white text-center pb-2 mt-auto">
-      <p class="pt-3">created by 🔶 irawan</p>
+      <p class="pt-3 m-0">created by 🔶 irawan</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -56,14 +59,27 @@
 
         try {
           const response = await fetch(`https://raw.githubusercontent.com/chipper26/efektifpedia/main/blog/${fileName}`);
-          const markdown = await response.text();
+          let markdown = await response.text();
           
+          // --- LOGIKA PEMBERSIH FRONTMATTER ---
+          // Menghilangkan bagian antara --- dan --- yang dibuat Sveltia
+          if (markdown.startsWith('---')) {
+            const parts = markdown.split('---');
+            if (parts.length >= 3) {
+              markdown = parts.slice(2).join('---').trim();
+            }
+          }
+
           // Render markdown ke HTML
           contentArea.innerHTML = marked.parse(markdown);
           loading.style.display = 'none';
-          document.title = fileName.replace('.md', '').replace(/-/g, ' ') + " - efektifpedia";
+          
+          // Update judul tab browser secara otomatis
+          const displayTitle = fileName.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace('.md', '').replace(/-/g, ' ');
+          document.title = displayTitle.toUpperCase() + " - efektifpedia";
+          
         } catch (e) {
-          contentArea.innerHTML = "<h3>Artikel tidak ditemukan.</h3>";
+          contentArea.innerHTML = "<h3 class='text-center'>Artikel tidak ditemukan atau gagal dimuat.</h3>";
           loading.style.display = 'none';
         }
       }

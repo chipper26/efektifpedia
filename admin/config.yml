@@ -2,8 +2,7 @@ backend:
   name: github
   repo: chipper26/efektifpedia
   branch: main
-  # Gunakan gateway Sveltia yang sudah kamu daftarkan di callback URL tadi
-  base_url: https://api.sveltia.org
+  base_url: https://api.sveltia.org # Pastikan tertulis sveltia.org
   auth_endpoint: /auth
 
 site_url: https://chipper26.github.io/efektifpedia/

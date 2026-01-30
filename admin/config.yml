@@ -2,7 +2,6 @@ backend:
   name: github
   repo: chipper26/efektifpedia
   branch: main
-  # Alamat di bawah ini harus teliti ejaannya:
   base_url: https://api.sveltia.org
   auth_endpoint: /auth
 
@@ -20,5 +19,7 @@ collections:
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
       - { label: "Judul", name: "title", widget: "string" }
+      - { label: "Penulis", name: "author", widget: "string", default: "Tim Efektifpedia" }
+      - { label: "Kategori", name: "category", widget: "select", options: ["Edukasi", "Tips", "Berita", "Opini"], default: "Edukasi" }
       - { label: "Tanggal", name: "date", widget: "datetime" }
       - { label: "Isi Artikel", name: "body", widget: "markdown" }

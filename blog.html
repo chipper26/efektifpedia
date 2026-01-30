@@ -7,20 +7,28 @@
     <link rel="stylesheet" href="style.css">
     <title>Blog - efektifpedia</title>
     <style>
+      /* Layout Fix: Sticky Footer */
       html, body { height: 100%; margin: 0; }
       body { display: flex; flex-direction: column; background-color: #f4f7f6; padding-top: 80px; }
       .content-wrapper { flex: 1 0 auto; }
       footer { flex-shrink: 0; }
-      .card-blog { border: none; background: none; border-bottom: 1px solid #dee2e6; margin-bottom: 20px; padding-bottom: 20px; }
-      .card-blog img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; background-color: #ddd; }
+
+      /* Card Style */
+      .card-blog { border: none; background: none; border-bottom: 1px solid #dee2e6; margin-bottom: 20px; padding-bottom: 20px; transition: 0.3s; }
+      .card-blog:hover { opacity: 0.8; }
+      .card-blog img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; background-color: #eee; }
+      
+      /* Typography & Badges */
       .category-badge { background: #e9ecef; color: #0d6efd; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 10px; display: inline-block; }
-      .blog-title { font-weight: 700; color: #212529; text-decoration: none; font-size: 1.25rem; line-height: 1.3; }
+      .blog-title { font-weight: 700; color: #212529; text-decoration: none; font-size: 1.25rem; line-height: 1.3; display: block; }
       .blog-title:hover { color: #0d6efd; }
       .meta-info { font-size: 0.85rem; color: #6c757d; margin-top: 10px; }
+      
+      /* Sidebar Style */
       .sidebar-title { font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #0d6efd; padding-bottom: 5px; margin-bottom: 15px; font-size: 0.9rem; }
       .popular-item { list-style: none; padding: 0; }
       .popular-item li { padding: 10px 0; border-bottom: 1px solid #eee; display: flex; align-items: flex-start; }
-      .popular-item li::before { content: "●"; color: #0d6efd; margin-right: 10px; }
+      .popular-item li::before { content: "●"; color: #0d6efd; margin-right: 10px; font-size: 0.8rem; }
       .popular-link { text-decoration: none; color: #333; font-weight: 500; font-size: 0.95rem; line-height: 1.4; }
       .popular-link:hover { color: #0d6efd; }
     </style>
@@ -44,14 +52,16 @@
             <div id="blog-container">
               <div class="text-center p-5">
                 <div class="spinner-border text-primary"></div>
-                <p>Memuat artikel...</p>
+                <p class="mt-2">Memuat artikel...</p>
               </div>
             </div>
           </div>
+
           <div class="col-lg-4 mt-5 mt-lg-0">
             <div class="sticky-top" style="top: 90px;">
               <h5 class="sidebar-title">ARTIKEL TERPOPULER</h5>
-              <ul class="popular-item" id="popular-container"></ul>
+              <ul class="popular-item" id="popular-container">
+                </ul>
             </div>
           </div>
         </div>
@@ -77,36 +87,40 @@
           container.innerHTML = '';
           popularContainer.innerHTML = '';
 
-          // Loop untuk ambil data tiap file
           for (const [index, file] of posts.entries()) {
             const rawRes = await fetch(file.download_url);
             const markdown = await rawRes.text();
             
             // Default Values
             let title = file.name.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace('.md', '').replace(/-/g, ' ');
-            let thumb = "https://via.placeholder.com/300x200?text=Efektifpedia";
+            let thumb = ""; 
             let author = "Tim Efektifpedia";
             let category = "Edukasi";
-            let dateStr = "Januari 2026";
+            let dateStr = "Baru saja";
 
-            // Ekstrak Frontmatter
+            // Extract Frontmatter Data
             if (markdown.startsWith('---')) {
-              const parts = markdown.split('---');
-              const fm = parts[1];
+              const fm = markdown.split('---')[1];
               
-              const tMatch = fm.match(/title:\s*(.*)/i);
-              if (tMatch) title = tMatch[1].replace(/['"]/g, '');
+              const tMatch = fm.match(/title:\s*["']?(.*?)["']?$/m);
+              const thumbMatch = fm.match(/thumbnail:\s*["']?(.*?)["']?$/m);
+              const authMatch = fm.match(/author:\s*["']?(.*?)["']?$/m);
+              const catMatch = fm.match(/category:\s*["']?(.*?)["']?$/m);
+              const dMatch = fm.match(/date:\s*["']?(.*?)["']?$/m);
+
+              if (tMatch) title = tMatch[1];
+              if (authMatch) author = authMatch[1];
+              if (catMatch) category = catMatch[1];
               
-              const thumbMatch = fm.match(/thumbnail:\s*(.*)/i);
-              if (thumbMatch) thumb = thumbMatch[1].replace(/['"]/g, '');
+              // Image Logic: Connect to Raw GitHub URL
+              if (thumbMatch && thumbMatch[1]) {
+                let path = thumbMatch[1].trim();
+                if (path.startsWith('/')) path = path.substring(1);
+                thumb = `https://raw.githubusercontent.com/${repo}/main/${path}`;
+              } else {
+                thumb = `https://via.placeholder.com/300x200?text=Efektifpedia`;
+              }
 
-              const authMatch = fm.match(/author:\s*(.*)/i);
-              if (authMatch) author = authMatch[1].replace(/['"]/g, '');
-
-              const catMatch = fm.match(/category:\s*(.*)/i);
-              if (catMatch) category = catMatch[1].replace(/['"]/g, '');
-
-              const dMatch = fm.match(/date:\s*(.*)/i);
               if (dMatch) {
                 const d = new Date(dMatch[1]);
                 dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -115,6 +129,7 @@
 
             const postUrl = `post.html?file=${file.name}`;
 
+            // Template untuk artikel utama
             container.innerHTML += `
               <div class="card card-blog">
                 <div class="row align-items-center">
@@ -129,12 +144,14 @@
                 </div>
               </div>`;
 
+            // Template untuk sidebar terpopuler (ambil 6 teratas)
             if(index < 6) {
-              popularContainer.innerHTML += `<li><a href="${postUrl}" class="popular-link">${title}</a></li>`;
+              popularContainer.innerHTML += `
+                <li><a href="${postUrl}" class="popular-link">${title}</a></li>`;
             }
           }
         } catch (e) {
-          container.innerHTML = "<p class='text-center'>Gagal memuat artikel.</p>";
+          container.innerHTML = "<p class='text-center p-5'>Gagal memuat artikel. Silakan coba lagi nanti.</p>";
         }
       }
       fetchPosts();

@@ -1,7 +1,8 @@
 backend:
   name: github
   repo: chipper26/efektifpedia
-  branch: master
+  branch: main # Diperbarui dari master ke main sesuai repo GitHub kamu
+  proxy_url: https://api.netlify.com/auth # Penting jika kamu pakai bantuan Netlify Auth
 
 site_url: https://chipper26.github.io/efektifpedia/
 display_url: https://chipper26.github.io/efektifpedia/
@@ -12,7 +13,7 @@ public_folder: "/img/uploads"
 collections:
   - name: "blog"
     label: "Blog"
-    folder: "blog"
+    folder: "blog" # Sveltia akan otomatis buat folder 'blog' di root saat artikel pertama dipublish
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:

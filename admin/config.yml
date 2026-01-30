@@ -8,7 +8,9 @@ backend:
 site_url: https://chipper26.github.io/efektifpedia/
 display_url: https://chipper26.github.io/efektifpedia/
 
+# Lokasi penyimpanan file gambar
 media_folder: "img/uploads"
+# Alamat yang akan tertulis di file Markdown (Wajib pakai '/' di depan)
 public_folder: "/img/uploads"
 
 collections:
@@ -20,7 +22,9 @@ collections:
     fields:
       - { label: "Judul", name: "title", widget: "string" }
       
-      # Penulis sekarang pakai menu pilihan (Dropdown)
+      # Tambahkan Field Thumbnail di sini agar bisa upload gambar
+      - { label: "Gambar Utama (Thumbnail)", name: "thumbnail", widget: "image", required: false }
+      
       - label: "Penulis"
         name: "author"
         widget: "select"

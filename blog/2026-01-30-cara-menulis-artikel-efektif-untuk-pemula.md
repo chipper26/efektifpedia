@@ -1,9 +1,8 @@
 ---
 title: Cara Menulis Artikel Efektif untuk Pemula
+thumbnail: /img/uploads/pen.jpg
 date: 2026-01-30T18:26:00
 ---
-
-![pen](/img/uploads/pen.jpg)
 
 Menulis bukan sekedar merangkai kata, tapi menyampaikan ide agar mudah dipahami.
 

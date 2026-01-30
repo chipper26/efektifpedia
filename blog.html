@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <title>Blog - efektifpedia</title>
+  </head>
+  <body style="padding-top: 70px;">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm fixed-top">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">efektifpedia</a>
+        <div class="navbar-nav ms-auto">
+          <a class="nav-link" href="index.html">Home</a>
+          <a class="nav-link active" href="blog.html">Blog</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container mt-5">
+      <div class="row text-center mb-4">
+        <div class="col">
+          <h2 class="fw-bold">Artikel Terbaru</h2>
+          <p>Inspirasi dan tips seputar penulisan dari efektifpedia</p>
+        </div>
+      </div>
+
+      <div id="blog-list" class="row justify-content-center">
+        <div class="text-center">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p>Mencari artikel...</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="bg-primary text-white text-center pb-2 mt-5">
+      <p class="pt-3">created by 🔶 irawan</p>
+    </footer>
+
+    <script>
+      async function getArticles() {
+        const container = document.getElementById('blog-list');
+        try {
+          // Mengambil daftar file dari folder 'blog' di GitHub kamu
+          const response = await fetch('https://api.github.com/repos/chipper26/efektifpedia/contents/blog');
+          const files = await response.json();
+          
+          if (files.length === 0) {
+            container.innerHTML = '<p class="text-center">Belum ada artikel yang diterbitkan.</p>';
+            return;
+          }
+
+          container.innerHTML = '';
+          files.forEach(file => {
+            if (file.name.endsWith('.md')) {
+              // Membersihkan nama file menjadi judul
+              const cleanTitle = file.name.replace(/^\d{4}-\d{2}-\d{2}-/, '').replace('.md', '').replace(/-/g, ' ');
+              
+              const html = `
+                <div class="col-md-4 mb-4">
+                  <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                      <h5 class="card-title text-capitalize fw-bold">${cleanTitle}</h5>
+                      <p class="card-text text-muted small">Dipublikasikan di folder /blog</p>
+                      <a href="https://github.com/chipper26/efektifpedia/blob/main/blog/${file.name}" target="_blank" class="btn btn-outline-primary btn-sm">Baca di GitHub</a>
+                    </div>
+                  </div>
+                </div>`;
+              container.innerHTML += html;
+            }
+          });
+        } catch (e) {
+          container.innerHTML = '<p class="text-center">Gagal memuat artikel. Pastikan folder "blog" sudah ada di GitHub.</p>';
+        }
+      }
+      getArticles();
+    </script>
+  </body>
+</html>

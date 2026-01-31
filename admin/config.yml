@@ -8,36 +8,30 @@ backend:
 site_url: https://chipper26.github.io/efektifpedia/
 display_url: https://chipper26.github.io/efektifpedia/
 
-# Lokasi penyimpanan file gambar
 media_folder: "img/uploads"
-# Alamat yang akan tertulis di file Markdown (Wajib pakai '/' di depan)
 public_folder: "/img/uploads"
+
+# Konfigurasi Editor agar lebih bersih
+editor:
+  preview: false # Mematikan preview otomatis agar area nulis luas seperti request-mu
 
 collections:
   - name: "blog"
-    label: "Blog"
+    label: "Artikel Blog"
     folder: "blog"
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
-      - { label: "Judul", name: "title", widget: "string" }
-      
-      # Tambahkan Field Thumbnail di sini agar bisa upload gambar
-      - { label: "Gambar Utama (Thumbnail)", name: "thumbnail", widget: "image", required: false }
-      
-      - label: "Penulis"
-        name: "author"
-        widget: "select"
-        options:
-          - "TRI IRAWAN"
-          - "Budi Darmawan"
-        default: "TRI IRAWAN"
-
-      - label: "Kategori"
-        name: "category"
-        widget: "select"
-        options: ["Edukasi", "Tips", "Berita", "Opini"]
-        default: "Edukasi"
-        
-      - { label: "Tanggal", name: "date", widget: "datetime" }
+      # Area Utama (Editorial)
+      - { label: "Judul", name: "title", widget: "string", hint: "Maksimal 150 karakter" }
       - { label: "Isi Artikel", name: "body", widget: "markdown" }
+      
+      # Area Pendukung (Biasanya di samping atau bawah)
+      - label: "Metadata Artikel"
+        name: "meta_group"
+        widget: "object"
+        fields:
+          - { label: "Gambar Utama (Thumbnail)", name: "thumbnail", widget: "image", required: false }
+          - { label: "Penulis", name: "author", widget: "select", options: ["TRI IRAWAN", "Budi Darmawan"], default: "TRI IRAWAN" }
+          - { label: "Kategori", name: "category", widget: "select", options: ["Edukasi", "Tips", "Berita", "Opini"], default: "Edukasi" }
+          - { label: "Tanggal", name: "date", widget: "datetime" }

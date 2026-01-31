@@ -1,0 +1,34 @@
+name: Efektifpedia AI Writer Bot
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Otomatis jalan jam 7 pagi WIB
+  workflow_dispatch: # Tombol manual di tab Actions
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Requests
+        run: pip install requests
+
+      - name: Generate Content
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: python ai_writer.py
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "bot@efektifpedia.com"
+          git config --local user.name "Efektifpedia Bot"
+          git add .
+          git commit -m "AI: Update Daily Content" || exit 0
+          git push

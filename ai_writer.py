@@ -14,7 +14,6 @@ MODEL = "google/gemini-2.0-flash-001"
 FOLDER_TUJUAN = "blog" 
 
 # --- DAFTAR PENULIS (PERSONA) ---
-# Kamu bisa ganti atau tambah nama-nama tim kamu di sini
 DAFTAR_PENULIS = [
     "Nadira Kusuma",
     "Budi Santoso",
@@ -27,6 +26,7 @@ DAFTAR_PENULIS = [
 # Pilih satu nama secara acak
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 
+# Prompt dimodifikasi agar AI memberikan Keyword Gambar di baris paling terakhir
 PROMPT = f"""
 Cari berita teknologi paling viral hari ini ({datetime.now().strftime('%d %B %Y')}).
 Tulis artikel blog mendalam minimal 500 kata dalam Bahasa Indonesia.
@@ -40,12 +40,14 @@ date: "{datetime.now().strftime('%Y-%m-%d')}"
 category: "Tech News"
 author: "{PENULIS_HARI_INI}"
 ---
+
+Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail yang relevan (contoh: 'quantum', 'cybersecurity', 'ai'). Tulis saja katanya di baris baru tanpa tanda baca.
 """
 
 def tulis_artikel():
     # Validasi API Key
     if not API_KEY:
-        print("❌ Error: OPENROUTER_API_KEY tidak ditemukan di environment variables!")
+        print("❌ Error: OPENROUTER_API_KEY tidak ditemukan!")
         return
 
     headers = {
@@ -67,23 +69,34 @@ def tulis_artikel():
     try:
         response = requests.post(URL, headers=headers, data=json.dumps(data))
         if response.status_code == 200:
-            hasil = response.json()
-            konten = hasil['choices'][0]['message']['content']
+            raw_content = response.json()['choices'][0]['message']['content']
             
-            # Memastikan folder blog/ ada sebelum menulis file
+            # --- LOGIKA EKSTRAKSI KEYWORD & THUMBNAIL ---
+            lines = raw_content.strip().split('\n')
+            # Ambil kata terakhir sebagai keyword gambar
+            keyword = lines[-1].strip().replace(" ", ",") 
+            # Gabungkan kembali artikel tanpa baris terakhir (keyword) agar tidak muncul di teks blog
+            artikel_body = "\n".join(lines[:-1]) 
+            
+            # Gunakan Unsplash Source untuk thumbnail otomatis
+            img_url = f"https://source.unsplash.com/featured/800x450?{keyword}"
+
+            # Masukkan thumbnail ke dalam Frontmatter (di bawah author)
+            konten_final = artikel_body.replace(f"author: \"{PENULIS_HARI_INI}\"", f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\"")
+            
+            # Memastikan folder blog/ ada
             if not os.path.exists(FOLDER_TUJUAN):
                 os.makedirs(FOLDER_TUJUAN)
             
-            # Nama file unik berdasarkan waktu
+            # Nama file unik
             filename = os.path.join(FOLDER_TUJUAN, f"ai-news-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
             
             with open(filename, "w", encoding="utf-8") as f:
-                f.write(konten)
+                f.write(konten_final)
             
-            print(f"✅ BERHASIL! Artikel oleh '{PENULIS_HARI_INI}' tersimpan di: {filename}")
+            print(f"✅ BERHASIL! Artikel oleh '{PENULIS_HARI_INI}' dengan thumbnail '{keyword}' tersimpan di: {filename}")
         else:
             print(f"❌ Gagal di OpenRouter. Status: {response.status_code}")
-            print(response.text)
     except Exception as e:
         print(f"⚠️ Kendala teknis: {e}")
 

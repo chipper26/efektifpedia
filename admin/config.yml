@@ -5,19 +5,14 @@ backend:
   base_url: https://api.sveltia.org
   auth_endpoint: /auth
 
-site_url: https://chipper26.github.io/efektifpedia/
-display_url: https://chipper26.github.io/efektifpedia/
+# Mengaktifkan Workflow: Ini yang memunculkan pilihan Draft vs Publish
+publish_mode: editorial_workflow
 
-# Media & Assets
 media_folder: "img/uploads"
 public_folder: "/img/uploads"
 
-# Aktifkan Workflow untuk Fitur Draft
-publish_mode: editorial_workflow
-
-# Pengaturan Editor
 editor:
-  preview: true # Mengaktifkan kembali tombol preview (mata)
+  preview: true # Ikon mata tetap ada di samping tombol Save
 
 collections:
   - name: "blog"
@@ -26,16 +21,20 @@ collections:
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
-      # Fokus Utama Penulisan
-      - { label: "Judul", name: "title", widget: "string", hint: "Maksimal 150 karakter" }
-      - { label: "Isi Artikel", name: "body", widget: "markdown" }
+      - { label: "Judul", name: "title", widget: "string" }
       
-      # Pengelompokan Metadata agar Rapi
-      - label: "Metadata Artikel"
-        name: "meta_group"
+      # Pengaturan Toolbar Editor agar tidak dropdown (langsung muncul ikonnya)
+      - label: "Isi Artikel"
+        name: "body"
+        widget: "markdown"
+        minimal: false # Menampilkan toolbar yang lebih lengkap
+        buttons: ["bold", "italic", "link", "heading-one", "heading-two", "bulleted-list", "numbered-list", "quote", "image"]
+
+      - label: "Metadata (Pengaturan)"
+        name: "meta"
         widget: "object"
         fields:
-          - { label: "Gambar Utama (Thumbnail)", name: "thumbnail", widget: "image", required: false }
+          - { label: "Thumbnail", name: "thumbnail", widget: "image" }
           - { label: "Penulis", name: "author", widget: "select", options: ["TRI IRAWAN", "Budi Darmawan"], default: "TRI IRAWAN" }
-          - { label: "Kategori", name: "category", widget: "select", options: ["Edukasi", "Tips", "Berita", "Opini"], default: "Edukasi" }
+          - { label: "Kategori", name: "category", widget: "select", options: ["Edukasi", "Tips", "Berita"], default: "Edukasi" }
           - { label: "Tanggal", name: "date", widget: "datetime" }

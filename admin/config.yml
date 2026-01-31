@@ -8,12 +8,16 @@ backend:
 site_url: https://chipper26.github.io/efektifpedia/
 display_url: https://chipper26.github.io/efektifpedia/
 
+# Media & Assets
 media_folder: "img/uploads"
 public_folder: "/img/uploads"
 
-# Konfigurasi Editor agar lebih bersih
+# Aktifkan Workflow untuk Fitur Draft
+publish_mode: editorial_workflow
+
+# Pengaturan Editor
 editor:
-  preview: false # Mematikan preview otomatis agar area nulis luas seperti request-mu
+  preview: true # Mengaktifkan kembali tombol preview (mata)
 
 collections:
   - name: "blog"
@@ -22,11 +26,11 @@ collections:
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
-      # Area Utama (Editorial)
+      # Fokus Utama Penulisan
       - { label: "Judul", name: "title", widget: "string", hint: "Maksimal 150 karakter" }
       - { label: "Isi Artikel", name: "body", widget: "markdown" }
       
-      # Area Pendukung (Biasanya di samping atau bawah)
+      # Pengelompokan Metadata agar Rapi
       - label: "Metadata Artikel"
         name: "meta_group"
         widget: "object"

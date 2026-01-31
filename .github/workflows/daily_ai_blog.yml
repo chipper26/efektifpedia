@@ -2,8 +2,12 @@ name: Efektifpedia AI Writer Bot
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Otomatis jalan jam 7 pagi WIB
-  workflow_dispatch: # Tombol manual di tab Actions
+    # Berjalan 3 kali sehari (Format UTC):
+    # 00:00 UTC = 07:00 WIB (Berita Pagi)
+    # 06:00 UTC = 13:00 WIB (Berita Siang)
+    # 12:00 UTC = 19:00 WIB (Berita Malam)
+    - cron: '0 0,6,12 * * *'
+  workflow_dispatch: 
 
 jobs:
   write:
@@ -23,6 +27,7 @@ jobs:
       - name: Generate Content
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }} # WAJIB ADA agar gambar muncul
         run: python ai_writer.py
 
       - name: Commit and Push
@@ -30,5 +35,5 @@ jobs:
           git config --local user.email "bot@efektifpedia.com"
           git config --local user.name "Efektifpedia Bot"
           git add .
-          git commit -m "AI: Update Daily Content" || exit 0
+          git commit -m "AI: Update Content - $(date)" || exit 0
           git push

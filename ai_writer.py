@@ -7,6 +7,7 @@ from datetime import datetime
 # --- KONFIGURASI AMAN ---
 # Mengambil API Key dari Environment Variable (GitHub Secrets)
 API_KEY = os.getenv("OPENROUTER_API_KEY") 
+PEXELS_KEY = os.getenv("PEXELS_API_KEY") # Tambahkan ini di GitHub Secrets!
 URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "google/gemini-2.0-flash-001"
 
@@ -23,10 +24,8 @@ DAFTAR_PENULIS = [
     "Aditya Mahendra"
 ]
 
-# Pilih satu nama secara acak
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 
-# Prompt dimodifikasi agar AI memberikan Keyword Gambar di baris paling terakhir
 PROMPT = f"""
 Cari berita teknologi paling viral hari ini ({datetime.now().strftime('%d %B %Y')}).
 Tulis artikel blog mendalam minimal 500 kata dalam Bahasa Indonesia.
@@ -41,11 +40,31 @@ category: "Tech News"
 author: "{PENULIS_HARI_INI}"
 ---
 
-Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail yang relevan (contoh: 'quantum', 'cybersecurity', 'ai'). Tulis saja katanya di baris baru tanpa tanda baca.
+Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail yang relevan (contoh: 'technology', 'server', 'ai'). Tulis saja katanya di baris baru tanpa tanda baca.
 """
 
+def get_pexels_thumbnail(query):
+    """Fungsi mengambil foto asli dari API Pexels"""
+    if not PEXELS_KEY:
+        # Fallback jika key belum diset
+        return "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
+    
+    headers = {"Authorization": PEXELS_KEY}
+    pexels_url = f"https://api.pexels.com/v1/search?query={query}&per_page=1&orientation=landscape"
+    
+    try:
+        res = requests.get(pexels_url, headers=headers)
+        if res.status_code == 200:
+            data = res.json()
+            if data['photos']:
+                # Mengambil URL gambar ukuran besar yang sudah di-crop
+                return data['photos'][0]['src']['landscape']
+    except Exception as e:
+        print(f"⚠️ Gagal mengambil gambar Pexels: {e}")
+    
+    return "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
+
 def tulis_artikel():
-    # Validasi API Key
     if not API_KEY:
         print("❌ Error: OPENROUTER_API_KEY tidak ditemukan!")
         return
@@ -59,9 +78,7 @@ def tulis_artikel():
     
     data = {
         "model": MODEL,
-        "messages": [
-            {"role": "user", "content": PROMPT}
-        ]
+        "messages": [{"role": "user", "content": PROMPT}]
     }
 
     print(f"🤖 Bot sedang meriset tren untuk penulis: {PENULIS_HARI_INI}...")
@@ -73,28 +90,28 @@ def tulis_artikel():
             
             # --- LOGIKA EKSTRAKSI KEYWORD & THUMBNAIL ---
             lines = raw_content.strip().split('\n')
-            # Ambil kata terakhir sebagai keyword gambar
-            keyword = lines[-1].strip().replace(" ", ",") 
-            # Gabungkan kembali artikel tanpa baris terakhir (keyword) agar tidak muncul di teks blog
+            keyword = lines[-1].strip().lower() # Keyword dari AI
             artikel_body = "\n".join(lines[:-1]) 
             
-            # Gunakan Unsplash Source untuk thumbnail otomatis
-            img_url = f"https://source.unsplash.com/featured/800x450?{keyword}"
+            # Ambil URL gambar resmi dari Pexels
+            img_url = get_pexels_thumbnail(keyword)
 
-            # Masukkan thumbnail ke dalam Frontmatter (di bawah author)
-            konten_final = artikel_body.replace(f"author: \"{PENULIS_HARI_INI}\"", f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\"")
+            # Masukkan thumbnail ke dalam Frontmatter
+            konten_final = artikel_body.replace(
+                f"author: \"{PENULIS_HARI_INI}\"", 
+                f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
+            )
             
-            # Memastikan folder blog/ ada
             if not os.path.exists(FOLDER_TUJUAN):
                 os.makedirs(FOLDER_TUJUAN)
             
-            # Nama file unik
             filename = os.path.join(FOLDER_TUJUAN, f"ai-news-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
             
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Artikel oleh '{PENULIS_HARI_INI}' dengan thumbnail '{keyword}' tersimpan di: {filename}")
+            print(f"✅ BERHASIL! Penulis: {PENULIS_HARI_INI} | Gambar: {keyword}")
+            print(f"Link Gambar: {img_url}")
         else:
             print(f"❌ Gagal di OpenRouter. Status: {response.status_code}")
     except Exception as e:

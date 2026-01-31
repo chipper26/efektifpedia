@@ -5,14 +5,11 @@ backend:
   base_url: https://api.sveltia.org
   auth_endpoint: /auth
 
-# Mengaktifkan Workflow: Ini yang memunculkan pilihan Draft vs Publish
+# Mengaktifkan alur kerja editorial untuk memisahkan Draft dan Publish
 publish_mode: editorial_workflow
 
 media_folder: "img/uploads"
 public_folder: "/img/uploads"
-
-editor:
-  preview: true # Ikon mata tetap ada di samping tombol Save
 
 collections:
   - name: "blog"
@@ -20,17 +17,12 @@ collections:
     folder: "blog"
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    # Menambahkan ringkasan tampilan agar daftar artikel lebih informatif
+    summary: "{{title}} | {{author}} | {{status}}" 
     fields:
       - { label: "Judul", name: "title", widget: "string" }
-      
-      # Pengaturan Toolbar Editor agar tidak dropdown (langsung muncul ikonnya)
-      - label: "Isi Artikel"
-        name: "body"
-        widget: "markdown"
-        minimal: false # Menampilkan toolbar yang lebih lengkap
-        buttons: ["bold", "italic", "link", "heading-one", "heading-two", "bulleted-list", "numbered-list", "quote", "image"]
-
-      - label: "Metadata (Pengaturan)"
+      - { label: "Isi Artikel", name: "body", widget: "markdown" }
+      - label: "Metadata"
         name: "meta"
         widget: "object"
         fields:

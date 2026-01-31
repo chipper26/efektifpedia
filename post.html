@@ -23,6 +23,9 @@
       .author-name { font-weight: bold; color: #333; }
       .publish-date { color: #6c757d; font-size: 0.95rem; }
 
+      /* Thumbnail styling */
+      .featured-image { width: 100%; max-height: 450px; object-fit: cover; border-radius: 8px; margin-bottom: 2rem; }
+
       @media (max-width: 768px) {
         .entry-title { font-size: 1.8rem; }
       }
@@ -64,6 +67,8 @@
               <span id="author-name" class="author-name"></span> <span class="text-muted">| Penulis</span><br>
               <span id="publish-date" class="publish-date"></span>
             </div>
+
+            <img id="article-thumbnail" class="featured-image" style="display: none;" alt="Thumbnail Artikel">
           </div>
           
           <article id="post-content"></article>
@@ -94,6 +99,7 @@
         }
 
         try {
+          // Mengambil konten mentah dari repository GitHub
           const response = await fetch(`https://raw.githubusercontent.com/chipper26/efektifpedia/main/blog/${fileName}`);
           let markdown = await response.text();
           
@@ -101,7 +107,9 @@
           let author = "Tim Efektifpedia";
           let category = "Edukasi";
           let dateStr = "";
+          let thumbnail = "";
 
+          // Memproses Frontmatter (metadata di antara tanda ---)
           if (markdown.startsWith('---')) {
             const parts = markdown.split('---');
             if (parts.length >= 3) {
@@ -116,6 +124,10 @@
               const cMatch = fm.match(/category:\s*["']?(.*?)["']?$/m);
               if (cMatch) category = cMatch[1];
 
+              // LOGIKA BARU: Menangkap URL Thumbnail
+              const thumbMatch = fm.match(/thumbnail:\s*["']?(.*?)["']?$/m);
+              if (thumbMatch) thumbnail = thumbMatch[1];
+
               const dMatch = fm.match(/date:\s*["']?(.*?)["']?$/m);
               if (dMatch) {
                 const d = new Date(dMatch[1]);
@@ -123,15 +135,25 @@
                 dateStr = d.toLocaleDateString('id-ID', opt) + " WIB";
               }
               
+              // Sisakan hanya isi artikel tanpa frontmatter
               markdown = parts.slice(2).join('---').trim();
             }
           }
 
+          // Menampilkan data ke elemen HTML
           document.getElementById('article-title').innerText = title || fileName;
           document.getElementById('author-name').innerText = author;
           document.getElementById('article-category').innerText = category;
           document.getElementById('publish-date').innerText = "Efektifpedia.com, " + dateStr;
           
+          // Tampilkan gambar jika URL thumbnail ditemukan
+          const thumbElement = document.getElementById('article-thumbnail');
+          if (thumbnail) {
+            thumbElement.src = thumbnail;
+            thumbElement.style.display = 'block';
+          }
+          
+          // Render Markdown menjadi HTML
           contentArea.innerHTML = marked.parse(markdown);
           
           loading.style.display = 'none';

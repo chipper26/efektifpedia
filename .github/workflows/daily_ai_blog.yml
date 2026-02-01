@@ -1,11 +1,10 @@
-name: Efektifpedia AI Auto Bot
+name: Efektifpedia Lifestyle Bot
 
 on:
   schedule:
-    # 06:10 UTC = 13:10 WIB (Berita Siang)
-    # 12:10 UTC = 19:10 WIB (Berita Malam)
-    # 00:10 UTC = 07:10 WIB (Berita Pagi)
-    - cron: '10 0,6,12 * * *'
+    # 02:40 UTC = 09:40 WIB (Inspirasi Pagi)
+    # 14:40 UTC = 21:40 WIB (Renungan Malam)
+    - cron: '40 2,14 * * *'
   workflow_dispatch: 
 
 jobs:
@@ -23,16 +22,16 @@ jobs:
       - name: Install Requests
         run: pip install requests
 
-      - name: Generate Content
+      - name: Generate Lifestyle Content
         env:
           OPENROUTER_API_KEY: ${{secrets.OPENROUTER_API_KEY}}
           PEXELS_API_KEY: ${{secrets.PEXELS_API_KEY}}
-        run: python ai_writer.py
+        run: python lifestyle_writer.py
 
       - name: Commit and Push
         run: |
           git config --local user.email "bot@efektifpedia.com"
           git config --local user.name "Efektifpedia Bot"
           git add .
-          git commit -m "AI: Auto Update Content - $(date)" || exit 0
+          git commit -m "Lifestyle: Auto Update Content - $(date)" || exit 0
           git push

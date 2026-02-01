@@ -27,7 +27,7 @@ jobs:
           # Menggunakan API Key Cadangan sesuai permintaanmu
           OPENROUTER_API_KEY_BACKUP: ${{secrets.OPENROUTER_API_KEY_BACKUP}}
           PEXELS_API_KEY: ${{secrets.PEXELS_API_KEY}}
-        run: python lifestyle_writer.py
+        run: python test_api.py
 
       - name: Commit and Push
         run: |

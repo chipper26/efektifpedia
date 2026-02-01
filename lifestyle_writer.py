@@ -9,7 +9,7 @@ from datetime import datetime
 API_KEY = os.getenv("OPENROUTER_API_KEY_BACKUP") 
 PEXELS_KEY = os.getenv("PEXELS_API_KEY")
 URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = "google/gemini-2.0-flash-lite-preview-02-05:free"
+MODEL = "google/gemini-2.0-flash-001"
 
 FOLDER_TUJUAN = "blog" 
 

@@ -1,7 +1,7 @@
-// --- KONFIGURASI ASISTEN EKA ---
-const TRINITY_API_KEY = "MASUKKAN_API_KEY_TRINITY_DI_SINI"; 
-const WA_NUMBER = "6285889847355";
-const WA_LINK = `https://wa.me/${WA_NUMBER}?text=Halo%20Admin%20Efektifpedia,%20saya%20ingin%20konsultasi%20order%20artikel.`;
+// --- KONFIGURASI ASISTEN EKA (GROQ + SECURE BRIDGE) ---
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxROd8MmUWnxidQChVqSICejmas5DfDBfAdoC1tiazmBdBgqH9gnj8ocaYj0FNf1mO/exec"; 
+const MODERATOR_NUMBER = "6285889847355"; 
+const WA_LINK = `https://wa.me/${MODERATOR_NUMBER}?text=Halo%20Moderator%20Efektifpedia,%20saya%20ingin%20konsultasi%20order%20artikel.`;
 
 // --- TEMPLATE HTML & CSS ---
 const chatHTML = `
@@ -25,7 +25,7 @@ const chatHTML = `
             <span onclick="toggleChat()" style="cursor:pointer; font-size: 20px;">&times;</span>
         </div>
         <div id="chat-content" class="chat-body">
-            <div class="msg msg-ai">Halo! Saya <strong>Eka</strong>. Ada yang bisa saya bantu seputar jasa tulis artikel Efektifpedia? 😊</div>
+            <div class="msg msg-ai">Halo! Saya <strong>Eka</strong>, asisten cepat Efektifpedia. Ada yang bisa saya bantu? ⚡</div>
         </div>
         <div class="chat-footer">
             <input type="text" id="user-input" placeholder="Tanya sesuatu..." style="flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; outline: none;">
@@ -50,29 +50,25 @@ window.toggleChat = function() {
     chatBox.style.display = (chatBox.style.display === 'none' || chatBox.style.display === '') ? 'flex' : 'none';
 };
 
-// Fungsi kirim pesan
+// Fungsi kirim pesan lewat Google Script Bridge
 window.sendMessage = async function() {
     const message = userInput.value.trim();
     if (!message) return;
 
+    // Tampilkan pesan user
     chatContent.innerHTML += `<div class="msg msg-user">${message}</div>`;
     userInput.value = '';
     chatContent.scrollTop = chatContent.scrollHeight;
 
-    const systemPrompt = `Kamu adalah Eka, asisten AI dari Efektifpedia.
+    const systemPrompt = `Kamu adalah Eka, asisten AI super cepat dari Efektifpedia.
     - Layanan: Jasa tulis artikel kreatif (Basic 15rb, Pro 250rb, Premium 500rb).
-    - Aturan: Jawab dengan ramah dan singkat. 
-    - Penting: Jika user ingin beli, pesan, atau tanya harga detail, arahkan untuk klik link WA ini: ${WA_LINK}`;
+    - Jika user ingin order atau tanya harga detail, arahkan untuk klik link WA moderator ini: ${WA_LINK}
+    - Gunakan gaya bahasa yang ramah, profesional, dan to-the-point.`;
 
     try {
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: "POST",
-            headers: {
-                "Authorization": `Bearer ${TRINITY_API_KEY}`,
-                "Content-Type": "application/json"
-            },
             body: JSON.stringify({
-                "model": "google/gemini-2.0-flash-001", 
                 "messages": [
                     {"role": "system", "content": systemPrompt},
                     {"role": "user", "content": message}
@@ -81,12 +77,13 @@ window.sendMessage = async function() {
         });
 
         const data = await response.json();
+        // Groq via Google Script mengembalikan format JSON yang sama
         const aiResponse = data.choices[0].message.content;
 
         chatContent.innerHTML += `<div class="msg msg-ai"><strong>Eka:</strong> ${aiResponse}</div>`;
         chatContent.scrollTop = chatContent.scrollHeight;
     } catch (error) {
-        chatContent.innerHTML += `<div class="msg msg-ai" style="color:red;">Aduh, Eka sedang gangguan. Coba lagi nanti ya!</div>`;
+        chatContent.innerHTML += `<div class="msg msg-ai" style="color:red;">Maaf, asisten sedang sibuk. Silakan langsung hubungi kami via WhatsApp ya!</div>`;
     }
 };
 

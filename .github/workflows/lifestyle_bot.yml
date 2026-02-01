@@ -2,29 +2,36 @@ name: Efektifpedia Lifestyle Bot
 
 on:
   schedule:
-    - cron: '30 2,14 * * *' # Jam 09:30 dan 21:30 WIB
-  workflow_dispatch:
+    # 02:40 UTC = 09:40 WIB (Inspirasi Pagi)
+    # 14:40 UTC = 21:40 WIB (Renungan Malam)
+    - cron: '40 2,14 * * *'
+  workflow_dispatch: 
 
 jobs:
-  build:
+  write:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - name: Install Dependencies
+
+      - name: Install Requests
         run: pip install requests
-      - name: Run Lifestyle Script
+
+      - name: Generate Lifestyle Content
         env:
           OPENROUTER_API_KEY: ${{secrets.OPENROUTER_API_KEY}}
           PEXELS_API_KEY: ${{secrets.PEXELS_API_KEY}}
         run: python lifestyle_writer.py
-      - name: Commit & Push
+
+      - name: Commit and Push
         run: |
-          git config --local user.email "lifestyle-bot@efektifpedia.com"
-          git config --local user.name "Lifestyle-Bot"
+          git config --local user.email "bot@efektifpedia.com"
+          git config --local user.name "Efektifpedia Bot"
           git add .
-          git commit -m "Lifestyle: Update Daily Content" || exit 0
+          git commit -m "Lifestyle: Auto Update Content - $(date)" || exit 0
           git push

@@ -1,4 +1,5 @@
 // --- KONFIGURASI ASISTEN EKA (GROQ + SECURE BRIDGE) ---
+// Link Google Apps Script kamu sudah terpasang di sini
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxROd8MmUWnxidQChVqSICejmas5DfDBfAdoC1tiazmBdBgqH9gnj8ocaYj0FNf1mO/exec"; 
 const MODERATOR_NUMBER = "6285889847355"; 
 const WA_LINK = `https://wa.me/${MODERATOR_NUMBER}?text=Halo%20Moderator%20Efektifpedia,%20saya%20ingin%20konsultasi%20order%20artikel.`;
@@ -7,6 +8,7 @@ const WA_LINK = `https://wa.me/${MODERATOR_NUMBER}?text=Halo%20Moderator%20Efekt
 const chatHTML = `
 <style>
     #ai-chat-widget { font-family: 'Segoe UI', Roboto, sans-serif; transition: all 0.3s ease; }
+    /* Penyesuaian posisi agar lurus dengan ikon WA kamu */
     .chat-bubble { width: 330px; height: 450px; background: white; border-radius: 15px; display: none; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid #0d6efd; overflow: hidden; position: absolute; bottom: 80px; right: 0; }
     .chat-header { background: #0d6efd; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
     .chat-body { flex: 1; overflow-y: auto; padding: 15px; background: #f8f9fa; display: flex; flex-direction: column; gap: 10px; }
@@ -55,11 +57,12 @@ window.sendMessage = async function() {
     const message = userInput.value.trim();
     if (!message) return;
 
-    // Tampilkan pesan user
+    // Tampilkan pesan user ke layar
     chatContent.innerHTML += `<div class="msg msg-user">${message}</div>`;
     userInput.value = '';
     chatContent.scrollTop = chatContent.scrollHeight;
 
+    // Briefing AI agar mengarah ke WA moderator
     const systemPrompt = `Kamu adalah Eka, asisten AI super cepat dari Efektifpedia.
     - Layanan: Jasa tulis artikel kreatif (Basic 15rb, Pro 250rb, Premium 500rb).
     - Jika user ingin order atau tanya harga detail, arahkan untuk klik link WA moderator ini: ${WA_LINK}
@@ -77,9 +80,9 @@ window.sendMessage = async function() {
         });
 
         const data = await response.json();
-        // Groq via Google Script mengembalikan format JSON yang sama
         const aiResponse = data.choices[0].message.content;
 
+        // Tampilkan jawaban dari Groq
         chatContent.innerHTML += `<div class="msg msg-ai"><strong>Eka:</strong> ${aiResponse}</div>`;
         chatContent.scrollTop = chatContent.scrollHeight;
     } catch (error) {
@@ -87,6 +90,7 @@ window.sendMessage = async function() {
     }
 };
 
+// Listener untuk tombol Enter
 userInput.addEventListener("keypress", function(event) {
     if (event.key === "Enter") {
         sendMessage();

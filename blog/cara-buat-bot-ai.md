@@ -1,16 +1,12 @@
-# Membangun Pasukan Penulis Digital: Bagaimana Saya Mengotomatisasi Blog dengan Bot AI di GitHub
-
-![Thumbnail Efektifpedia AI Bot](https://raw.githubusercontent.com/chipper26/efektifpedia/main/img/thumbnail-ai-bot.png)
-
-Tentu, ini adalah draf artikel SEO yang lengkap, mendalam, dan memiliki sentuhan personal berdasarkan perjalanan kita membangun bot ini. Artikel ini dirancang untuk menarik minat pembaca sekaligus memberikan panduan teknis yang solid.
-
 ---
-
-### Intro: Ide Awal dan Eksperimen yang "Pecah Telur"
+title: Membangun Pasukan Penulis Digital: Bagaimana Saya Mengotomatisasi Blog dengan Bot AI di GitHub
+thumbnail: /img/thumbnail-ai-bot.png
+date: 2026-02-01T14:02:00
+---
 
 Semua ini bermula dari sebuah pertanyaan sederhana: *“Bisa nggak sih, saya punya blog yang terus update tanpa saya harus begadang ngetik setiap malam?”*
 
-Sebagai pemilik **Efektifpedia**, saya selalu percaya bahwa teknologi seharusnya membebaskan waktu kita, bukan malah mengikat kita pada rudinitas yang repetitif. Ide awalnya muncul saat saya melihat potensi besar dari model AI melalui **OpenRouter**. Saya berpikir, jika AI bisa menulis satu artikel bagus dalam hitungan detik, kenapa saya tidak membuat sistem yang memerintahkan AI tersebut untuk menulis, mencari gambar, dan mempostingnya sendiri setiap hari?
+Sebagai pemilik **Efektifpedia**, saya selalu percaya bahwa teknologi seharusnya membebaskan waktu kita, bukan malah mengikat kita pada rutinitas yang repetitif. Ide awalnya muncul saat saya melihat potensi besar dari model AI seperti GPT atau Claude melalui **OpenRouter**. Saya berpikir, jika AI bisa menulis satu artikel bagus dalam hitungan detik, kenapa saya tidak membuat sistem yang memerintahkan AI tersebut untuk menulis, mencari gambar, dan mempostingnya sendiri setiap hari?
 
 Perjalanannya tidak langsung mulus. Awalnya, bot saya sempat mogok. Saya sudah set jam 7 pagi, tapi jam 8 pun belum ada tanda-tanda kehidupan. Ternyata, membangun bot di GitHub Actions butuh ketelitian pada hal-hal kecil seperti spasi pada kode (*syntax*) dan perizinan akses (*permissions*). Namun, saat saya melihat notifikasi **"Scheduled"** berwarna hijau di dashboard GitHub dan melihat artikel baru terbit otomatis tepat waktu, rasanya seperti memiliki karyawan teladan yang bekerja di balik layar.
 
@@ -18,7 +14,7 @@ AI bukan datang untuk mencuri pekerjaan kita. Justru, AI adalah "rekan kerja" ya
 
 ---
 
-### Mengapa Memilih GitHub Actions dan Python?
+## Mengapa Memilih GitHub Actions dan Python?
 
 Mungkin kamu bertanya, kenapa tidak pakai WordPress dengan plugin otomatis saja? Jawabannya: **Biaya dan Kontrol.**
 
@@ -26,7 +22,7 @@ Dengan menggunakan **GitHub Actions**, saya bisa menjalankan bot ini secara **gr
 
 ---
 
-### Langkah Teknis: Membangun Otak dan Jadwal Bot
+## Langkah Teknis: Membangun Otak dan Jadwal Bot
 
 #### 1. Menyiapkan "Otak" Melalui API
 
@@ -38,13 +34,13 @@ Salah satu kesalahan pemula adalah menuliskan kunci API langsung di dalam kode. 
 
 #### 3. Membuat Jadwal Kerja (The Cron Job)
 
-Inti dari otomatisasi ini ada pada file `.yml`. Saya mengatur bot agar bekerja tiga kali sehari: Pagi (Berita Pagi), Siang (Update Siang), dan Malam (Ringkasan Malam). 
+Inti dari otomatisasi ini ada pada file `.yml`. Saya mengatur bot agar bekerja tiga kali sehari: Pagi (Berita Pagi), Siang (Update Siang), dan Malam (Ringkasan Malam).
 
 Satu trik penting yang saya pelajari: Jangan mengatur bot tepat di menit ke-0 (misal jam 07:00 pas). Kenapa? Karena jutaan bot lain di dunia melakukan hal yang sama, sehingga antrean server GitHub jadi sangat panjang. Saya mengaturnya di menit ke-10 (07:10) agar mendapatkan "jalur cepat".
 
 ---
 
-### Mengatasi Kendala: Ketika Bot Tidak Jalan
+## Mengatasi Kendala: Ketika Bot Tidak Jalan
 
 Banyak orang menyerah saat bot mereka tidak jalan otomatis. Berdasarkan pengalaman saya kemarin, ada dua penyebab utama:
 
@@ -53,7 +49,7 @@ Banyak orang menyerah saat bot mereka tidak jalan otomatis. Berdasarkan pengalam
 
 ---
 
-### Efisiensi: Memangkas Biaya, Meningkatkan Hasil
+## Efisiensi: Memangkas Biaya, Meningkatkan Hasil
 
 Setelah bot ini aktif, saya menyadari satu hal besar: Biaya operasional konten saya turun drastis hampir ke **Rp 0**. Jika saya membayar penulis konten untuk 3 artikel sehari, biayanya bisa jutaan rupiah per bulan. Dengan bot ini, saya hanya perlu memantau lewat smartphone sambil ngopi.
 
@@ -61,7 +57,7 @@ AI mengolah data, merangkai kata, bahkan menyematkan gambar pendukung yang relev
 
 ---
 
-### Penutup: Mulailah Sekarang
+## Penutup: Mulailah Sekarang
 
 Membangun bot AI ini bukan tentang menjadi jago *coding*, tapi tentang kemauan untuk mencoba dan belajar dari kesalahan *syntax* yang sepele. Efektifpedia kini resmi dikelola oleh tim kolaborasi antara manusia (strategi) dan AI (eksekusi).
 

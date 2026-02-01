@@ -1,9 +1,9 @@
-name: Efektifpedia Lifestyle Bot
+name: Efektifpedia Education Bot
 
 on:
   schedule:
-    # 02:40 UTC = 09:40 WIB (Inspirasi Pagi)
-    # 14:40 UTC = 21:40 WIB (Renungan Malam)
+    # 02:40 UTC = 09:40 WIB (Edukasi Pagi)
+    # 14:40 UTC = 21:40 WIB (Edukasi Malam)
     - cron: '40 2,14 * * *'
   workflow_dispatch: 
 
@@ -22,9 +22,10 @@ jobs:
       - name: Install Requests
         run: pip install requests
 
-      - name: Generate Lifestyle Content
+      - name: Generate Education Content
         env:
-          OPENROUTER_API_KEY: ${{secrets.OPENROUTER_API_KEY}}
+          # Menggunakan API Key Cadangan sesuai permintaanmu
+          OPENROUTER_API_KEY_BACKUP: ${{secrets.OPENROUTER_API_KEY_BACKUP}}
           PEXELS_API_KEY: ${{secrets.PEXELS_API_KEY}}
         run: python lifestyle_writer.py
 
@@ -33,5 +34,5 @@ jobs:
           git config --local user.email "bot@efektifpedia.com"
           git config --local user.name "Efektifpedia Bot"
           git add .
-          git commit -m "Lifestyle: Auto Update Content - $(date)" || exit 0
+          git commit -m "Edu: Auto Update Content - $(date)" || exit 0
           git push

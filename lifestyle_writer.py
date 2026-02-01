@@ -5,6 +5,7 @@ import random
 from datetime import datetime
 
 # --- KONFIGURASI AMAN ---
+# Menggunakan API Key cadangan sesuai strategi kita
 API_KEY = os.getenv("OPENROUTER_API_KEY_BACKUP") 
 PEXELS_KEY = os.getenv("PEXELS_API_KEY")
 URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -12,49 +13,54 @@ MODEL = "google/gemini-2.0-flash-lite-preview-02-05:free"
 
 FOLDER_TUJUAN = "blog" 
 
-# --- DAFTAR PENULIS (Sesuai Karyawan Kemarin) ---
+# --- DAFTAR PENULIS (Karyawan Efektifpedia) ---
 DAFTAR_PENULIS = [
-    "Nadira Kusuma",
-    "Budi Santoso",
-    "Citra Anggraini",
-    "Andi Wijaya",
-    "Raka Santosa",
-    "Aditya Mahendra"
+    "Nadira Kusuma", "Budi Santoso", "Citra Anggraini",
+    "Andi Wijaya", "Raka Santosa", "Aditya Mahendra"
 ]
 
-# Daftar Topik Lifestyle (Variasi agar tidak Cloud Computing terus)
-DAFTAR_TOPIK = [
-    "Tips produktivitas kerja remote (WFA) agar tetap fokus",
-    "Pentingnya gaya hidup minimalis untuk kesehatan mental di era digital",
-    "Cara memanfaatkan AI untuk belajar skill baru secara mandiri",
-    "Tips menata meja kerja (desk setup) minimalis untuk meningkatkan inspirasi",
-    "Panduan memulai kebiasaan membaca buku di tengah kesibukan digital",
-    "Manfaat 'Digital Detox' bagi kesehatan mata dan pikiran"
+# --- DAFTAR BIDANG EDUKASI (UMUM) ---
+# AI akan memilih satu bidang ini lalu menentukan sub-topik sendiri
+DAFTAR_BIDANG = [
+    "Cloud Computing (SaaS, IaaS, PaaS, Virtualisasi)",
+    "Arsitektur Software (Microservices, Monolith, Decoupling)",
+    "Tutorial Pemrograman Python (Sintaks dasar hingga menengah)",
+    "Jaringan Komputer (Protokol Internet, IP Address, OSI Layer)",
+    "Sejarah Teknologi (Sejarah AI, Komputer, dan Internet)",
+    "Database Management (SQL vs NoSQL, Optimasi Query)",
+    "Cyber Security (Enkripsi Dasar, Keamanan Data, Firewall)",
+    "Pengembangan Web (HTML, CSS Dasar, Konsep Frontend/Backend)"
 ]
 
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
-TOPIK_HARI_INI = random.choice(DAFTAR_TOPIK)
+BIDANG_HARI_INI = random.choice(DAFTAR_BIDANG)
 
 PROMPT = f"""
-Tulis artikel blog menarik tentang: {TOPIK_HARI_INI}.
-Target pembaca: Anak muda dan profesional digital.
-Panjang artikel: Minimal 500 kata dalam Bahasa Indonesia yang santai tapi edukatif.
-JANGAN bahas tentang Cloud Computing atau Infrastruktur IT berat.
+Tugas kamu adalah menjadi pengajar teknologi di Efektifpedia.
+HARI INI FOKUS PADA BIDANG: {BIDANG_HARI_INI}.
+
+INSTRUKSI:
+1. Pilih satu sub-topik spesifik dari bidang tersebut yang penting untuk dipelajari pemula.
+2. Tulis artikel edukasi mendalam minimal 600 kata dalam Bahasa Indonesia.
+3. Gunakan gaya bahasa yang mudah dipahami, sertakan contoh kasus atau contoh kode jika relevan.
+4. JANGAN membuat judul yang membosankan. Buat judul yang bikin orang ingin belajar.
 
 Wajib sertakan Frontmatter di bagian paling atas:
 ---
-title: "[JUDUL MENARIK SESUAI TOPIK]"
+title: "[JUDUL SPESIFIK DAN EDUKATIF]"
 date: "{datetime.now().strftime('%Y-%m-%d')}"
-category: "Lifestyle"
+category: "Edukasi"
 author: "{PENULIS_HARI_INI}"
 ---
 
-Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail di Pexels (contoh: 'workspace', 'meditation', 'reading'). Tulis saja katanya di baris baru tanpa tanda baca.
+PENTING: Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail di Pexels (contoh: 'coding', 'server', 'books'). Tulis saja katanya di baris baru tanpa tanda baca.
 """
 
 def get_pexels_thumbnail(query):
+    # Fallback gambar edukasi jika API bermasalah
+    fallback_img = "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
     if not PEXELS_KEY:
-        return "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&w=800"
+        return fallback_img
     
     headers = {"Authorization": PEXELS_KEY}
     pexels_url = f"https://api.pexels.com/v1/search?query={query}&per_page=1&orientation=landscape"
@@ -67,11 +73,11 @@ def get_pexels_thumbnail(query):
                 return data['photos'][0]['src']['landscape']
     except Exception:
         pass
-    return "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&w=800"
+    return fallback_img
 
 def tulis_artikel():
     if not API_KEY:
-        print("❌ Error: API_KEY tidak ditemukan!")
+        print("❌ Error: OPENROUTER_API_KEY_BACKUP tidak ditemukan!")
         return
 
     headers = {
@@ -84,7 +90,7 @@ def tulis_artikel():
         "messages": [{"role": "user", "content": PROMPT}]
     }
 
-    print(f"🎨 Lifestyle Bot sedang menulis topik '{TOPIK_HARI_INI}' untuk penulis: {PENULIS_HARI_INI}...")
+    print(f"📚 EduBot sedang menyusun materi tentang {BIDANG_HARI_INI}...")
     
     try:
         response = requests.post(URL, headers=headers, data=json.dumps(data))
@@ -97,6 +103,7 @@ def tulis_artikel():
             
             img_url = get_pexels_thumbnail(keyword)
 
+            # Injeksi thumbnail ke frontmatter
             konten_final = artikel_body.replace(
                 f"author: \"{PENULIS_HARI_INI}\"", 
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
@@ -105,12 +112,13 @@ def tulis_artikel():
             if not os.path.exists(FOLDER_TUJUAN):
                 os.makedirs(FOLDER_TUJUAN)
             
-            filename = os.path.join(FOLDER_TUJUAN, f"lifestyle-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
+            # File disimpan dengan awalan edu agar rapi
+            filename = os.path.join(FOLDER_TUJUAN, f"edu-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
             
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Topik: {TOPIK_HARI_INI} | Penulis: {PENULIS_HARI_INI}")
+            print(f"✅ BERHASIL! Bidang: {BIDANG_HARI_INI} | Penulis: {PENULIS_HARI_INI}")
         else:
             print(f"❌ Gagal. Status: {response.status_code}")
     except Exception as e:

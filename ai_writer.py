@@ -5,9 +5,8 @@ import random
 from datetime import datetime
 
 # --- KONFIGURASI AMAN ---
-# Mengambil API Key dari Environment Variable (GitHub Secrets)
 API_KEY = os.getenv("OPENROUTER_API_KEY") 
-PEXELS_KEY = os.getenv("PEXELS_API_KEY") # Tambahkan ini di GitHub Secrets!
+PEXELS_KEY = os.getenv("PEXELS_API_KEY") 
 URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "google/gemini-2.0-flash-001"
 
@@ -15,38 +14,46 @@ MODEL = "google/gemini-2.0-flash-001"
 FOLDER_TUJUAN = "blog" 
 
 # --- DAFTAR PENULIS (PERSONA) ---
-DAFTAR_PENULIS = [
-    "Nadira Kusuma",
-    "Budi Santoso",
-    "Citra Anggraini",
-    "Andi Wijaya",
-    "Raka Santosa",
-    "Aditya Mahendra"
+DAFTAR_PENULIS = ["Nadira Kusuma", "Budi Santoso", "Citra Anggraini", "Andi Wijaya", "Raka Santosa", "Aditya Mahendra"]
+
+# --- DAFTAR SUDUT PANDANG (Agar pembahasan berita lebih bervariasi) ---
+SUDUT_PANDANG = [
+    "fokus pada inovasi perangkat keras (hardware) terbaru",
+    "fokus pada terobosan perangkat lunak (software) dan aplikasi",
+    "fokus pada dampak sosial dan kemanusiaan dari teknologi tersebut",
+    "fokus pada persaingan pasar antar perusahaan raksasa teknologi",
+    "fokus pada bagaimana tren ini mengubah gaya hidup masyarakat",
+    "fokus pada aspek keamanan siber dan perlindungan data pribadi",
+    "fokus pada efisiensi kerja dan produktivitas di masa depan"
 ]
 
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
+GAYA_BAHASA_HARI_INI = random.choice(SUDUT_PANDANG)
 
+# --- PROMPT BEBAS TAPI ACAK ---
 PROMPT = f"""
-Cari berita teknologi paling viral hari ini ({datetime.now().strftime('%d %B %Y')}).
-Tulis artikel blog mendalam minimal 500 kata dalam Bahasa Indonesia.
-Gunakan gaya bahasa profesional Sistem Informasi yang informatif.
+Cari berita teknologi yang paling viral, hangat, dan banyak dibicarakan dalam seminggu terakhir hingga hari ini ({datetime.now().strftime('%d %B %Y')}).
+Tulis artikel blog mendalam minimal 600 kata dalam Bahasa Indonesia.
+
+Gunakan gaya bahasa profesional Sistem Informasi yang informatif, namun kali ini berikan ulasan yang {GAYA_BAHASA_HARI_INI}.
+Pastikan isi artikel benar-benar relevan dengan apa yang sedang tren di dunia teknologi global saat ini.
+
 PENTING: Gunakan format Markdown murni tanpa tambahan teks penjelasan di luar markdown.
 
 Wajib sertakan Frontmatter di bagian paling atas:
 ---
-title: "[JUDUL BERITA VIRAL]"
+title: "[JUDUL BERITA VIRAL YANG MENARIK]"
 date: "{datetime.now().strftime('%Y-%m-%d')}"
 category: "Tech News"
 author: "{PENULIS_HARI_INI}"
 ---
 
-Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail yang relevan (contoh: 'technology', 'server', 'ai'). Tulis saja katanya di baris baru tanpa tanda baca.
+Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail yang relevan di Pexels (contoh: 'future', 'robot', 'code', 'smartphone'). Tulis saja katanya di baris baru tanpa tanda baca.
 """
 
 def get_pexels_thumbnail(query):
     """Fungsi mengambil foto asli dari API Pexels"""
     if not PEXELS_KEY:
-        # Fallback jika key belum diset
         return "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
     
     headers = {"Authorization": PEXELS_KEY}
@@ -57,7 +64,6 @@ def get_pexels_thumbnail(query):
         if res.status_code == 200:
             data = res.json()
             if data['photos']:
-                # Mengambil URL gambar ukuran besar yang sudah di-crop
                 return data['photos'][0]['src']['landscape']
     except Exception as e:
         print(f"⚠️ Gagal mengambil gambar Pexels: {e}")
@@ -78,10 +84,11 @@ def tulis_artikel():
     
     data = {
         "model": MODEL,
-        "messages": [{"role": "user", "content": PROMPT}]
+        "messages": [{"role": "user", "content": PROMPT}],
+        "temperature": 0.8  # Menaikkan kreativitas agar tidak mengulang topik yang sama
     }
 
-    print(f"🤖 Bot sedang meriset tren untuk penulis: {PENULIS_HARI_INI}...")
+    print(f"🤖 Meriset tren viral hari ini dengan sudut pandang: {GAYA_BAHASA_HARI_INI}...")
     
     try:
         response = requests.post(URL, headers=headers, data=json.dumps(data))
@@ -89,8 +96,8 @@ def tulis_artikel():
             raw_content = response.json()['choices'][0]['message']['content']
             
             # --- LOGIKA EKSTRAKSI KEYWORD & THUMBNAIL ---
-            lines = raw_content.strip().split('\n')
-            keyword = lines[-1].strip().lower() # Keyword dari AI
+            lines = [l for l in raw_content.strip().split('\n') if l.strip()]
+            keyword = lines[-1].strip().lower().split()[-1] # Ambil kata terakhir sebagai keyword
             artikel_body = "\n".join(lines[:-1]) 
             
             # Ambil URL gambar resmi dari Pexels
@@ -110,8 +117,7 @@ def tulis_artikel():
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Penulis: {PENULIS_HARI_INI} | Gambar: {keyword}")
-            print(f"Link Gambar: {img_url}")
+            print(f"✅ BERHASIL! Penulis: {PENULIS_HARI_INI} | Keyword Gambar: {keyword}")
         else:
             print(f"❌ Gagal di OpenRouter. Status: {response.status_code}")
     except Exception as e:

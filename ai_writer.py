@@ -30,13 +30,13 @@ SUDUT_PANDANG = [
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 GAYA_BAHASA_HARI_INI = random.choice(SUDUT_PANDANG)
 
-# --- PROMPT BEBAS TAPI ACAK ---
+# --- PROMPT BEBAS TAPI BERVARIAI ---
 PROMPT = f"""
 Cari berita teknologi yang paling viral, hangat, dan banyak dibicarakan dalam seminggu terakhir hingga hari ini ({datetime.now().strftime('%d %B %Y')}).
 Tulis artikel blog mendalam minimal 600 kata dalam Bahasa Indonesia.
 
 Gunakan gaya bahasa profesional Sistem Informasi yang informatif, namun kali ini berikan ulasan yang {GAYA_BAHASA_HARI_INI}.
-Pastikan isi artikel benar-benar relevan dengan apa yang sedang tren di dunia teknologi global saat ini.
+Pastikan isi artikel benar-benar relevan dengan tren teknologi global saat ini.
 
 PENTING: Gunakan format Markdown murni tanpa tambahan teks penjelasan di luar markdown.
 
@@ -51,9 +51,10 @@ author: "{PENULIS_HARI_INI}"
 Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail yang relevan di Pexels (contoh: 'future', 'robot', 'code', 'smartphone'). Tulis saja katanya di baris baru tanpa tanda baca.
 """
 
-def get_pexels_thumbnail(query):
-    """Fungsi mengambil foto asli dari API Pexels"""
+def get_pexels_url(query):
+    """Fungsi hanya mengambil URL LINK gambar resmi dari Pexels"""
     if not PEXELS_KEY:
+        # Fallback gambar default jika API Key tidak ada
         return "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
     
     headers = {"Authorization": PEXELS_KEY}
@@ -64,9 +65,10 @@ def get_pexels_thumbnail(query):
         if res.status_code == 200:
             data = res.json()
             if data['photos']:
+                # Kita ambil link gambar ukuran landscape saja
                 return data['photos'][0]['src']['landscape']
     except Exception as e:
-        print(f"⚠️ Gagal mengambil gambar Pexels: {e}")
+        print(f"⚠️ Gagal mengambil link Pexels: {e}")
     
     return "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
 
@@ -85,7 +87,7 @@ def tulis_artikel():
     data = {
         "model": MODEL,
         "messages": [{"role": "user", "content": PROMPT}],
-        "temperature": 0.8  # Menaikkan kreativitas agar tidak mengulang topik yang sama
+        "temperature": 0.8  # Kreativitas tinggi agar topik tidak membosankan
     }
 
     print(f"🤖 Meriset tren viral hari ini dengan sudut pandang: {GAYA_BAHASA_HARI_INI}...")
@@ -95,15 +97,15 @@ def tulis_artikel():
         if response.status_code == 200:
             raw_content = response.json()['choices'][0]['message']['content']
             
-            # --- LOGIKA EKSTRAKSI KEYWORD & THUMBNAIL ---
+            # --- LOGIKA EKSTRAKSI ---
             lines = [l for l in raw_content.strip().split('\n') if l.strip()]
-            keyword = lines[-1].strip().lower().split()[-1] # Ambil kata terakhir sebagai keyword
+            keyword = lines[-1].strip().lower().split()[-1] # Keyword untuk Pexels
             artikel_body = "\n".join(lines[:-1]) 
             
-            # Ambil URL gambar resmi dari Pexels
-            img_url = get_pexels_thumbnail(keyword)
+            # AMBIL URL GAMBAR (Bukan download file)
+            img_url = get_pexels_url(keyword)
 
-            # Masukkan thumbnail ke dalam Frontmatter
+            # Masukkan link URL ke dalam Frontmatter
             konten_final = artikel_body.replace(
                 f"author: \"{PENULIS_HARI_INI}\"", 
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
@@ -112,12 +114,13 @@ def tulis_artikel():
             if not os.path.exists(FOLDER_TUJUAN):
                 os.makedirs(FOLDER_TUJUAN)
             
+            # Nama file unik berdasarkan waktu
             filename = os.path.join(FOLDER_TUJUAN, f"ai-news-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
             
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Penulis: {PENULIS_HARI_INI} | Keyword Gambar: {keyword}")
+            print(f"✅ BERHASIL! Link Thumbnail: {img_url}")
         else:
             print(f"❌ Gagal di OpenRouter. Status: {response.status_code}")
     except Exception as e:

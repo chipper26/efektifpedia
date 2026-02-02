@@ -1,4 +1,4 @@
-// --- KONFIGURASI ASISTEN EKA (GROQ + SECURE BRIDGE) ---
+// --- KONFIGURASI ASISTEN EKA ---
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxROd8MmUWnxidQChVqSICejmas5DfDBfAdoC1tiazmBdBgqH9gnj8ocaYj0FNf1mO/exec"; 
 const MODERATOR_NUMBER = "6285889847355"; 
 const WA_LINK = `https://wa.me/${MODERATOR_NUMBER}?text=Halo%20Moderator%20Efektifpedia,%20saya%20ingin%20konsultasi%20order%20artikel.`;
@@ -14,16 +14,15 @@ const chatHTML = `
     .msg { max-width: 85%; padding: 8px 12px; border-radius: 15px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
     .msg-ai { background: #e2edff; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
     .msg-user { background: #0d6efd; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-    
-    /* Tombol Floating CS Baru */
     .chat-btn { width: 60px; height: 60px; border-radius: 50%; background: #0d6efd; border: none; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(13,110,253,0.4); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-    .chat-btn:hover { transform: scale(1.1); background: #0a58ca; }
-    .chat-btn svg { width: 32px; height: 32px; fill: currentColor; }
+    
+    /* Quick Replies Style */
+    .quick-replies { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+    .btn-reply { background: white; border: 1px solid #0d6efd; color: #0d6efd; padding: 5px 12px; border-radius: 15px; font-size: 12px; cursor: pointer; transition: 0.3s; }
+    .btn-reply:hover { background: #0d6efd; color: white; }
 
     .wa-btn-chat { display: inline-block; background: #25d366; color: white; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 13px; margin-top: 10px; transition: 0.3s; }
-    
-    /* Animasi Ngetik */
-    .typing-box { display: flex; gap: 4px; padding: 12px 15px; background: #e2edff; border-radius: 15px; align-self: flex-start; border-bottom-left-radius: 2px; margin-bottom: 5px; }
+    .typing-box { display: flex; gap: 4px; padding: 12px 15px; background: #e2edff; border-radius: 15px; align-self: flex-start; border-bottom-left-radius: 2px; }
     .dot { width: 7px; height: 7px; background: #0d6efd; border-radius: 50%; animation: blink 1.4s infinite ease-in-out; }
     .dot:nth-child(2) { animation-delay: 0.2s; }
     .dot:nth-child(3) { animation-delay: 0.4s; }
@@ -37,7 +36,12 @@ const chatHTML = `
             <span onclick="toggleChat()" style="cursor:pointer; font-size: 20px;">&times;</span>
         </div>
         <div id="chat-content" class="chat-body">
-            <div class="msg msg-ai">Halo! Saya <strong>Eka</strong> dari Customer Service. Ada yang bisa saya bantu hari ini? ⚡</div>
+            <div class="msg msg-ai">Halo! Saya <strong>Eka</strong>. Ada yang bisa saya bantu? Pilih menu di bawah atau tanya langsung ya! 👇</div>
+            <div class="quick-replies">
+                <button class="btn-reply" onclick="sendQuickReply('Berapa harga paket artikel?')">💰 Cek Harga</button>
+                <button class="btn-reply" onclick="sendQuickReply('Boleh lihat contoh artikelnya?')">📝 Contoh Artikel</button>
+                <button class="btn-reply" onclick="sendQuickReply('Bagaimana cara order?')">🛒 Cara Order</button>
+            </div>
         </div>
         <div class="chat-footer">
             <input type="text" id="user-input" placeholder="Tanya sesuatu..." style="flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; outline: none;">
@@ -46,11 +50,8 @@ const chatHTML = `
             </button>
         </div>
     </div>
-    
     <button id="chat-toggle" class="chat-btn" onclick="toggleChat()">
-        <svg viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12v10h4v-8H4v-2c0-4.41 3.59-8 8-8s8 3.59 8 8v2h-2v8h4V12c0-5.52-4.48-10-10-10zM14 14h4v4h-4v-4zm-8 0h4v4H6v-4z"/>
-        </svg>
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12v10h4v-8H4v-2c0-4.41 3.59-8 8-8s8 3.59 8 8v2h-2v8h4V12c0-5.52-4.48-10-10-10zM14 14h4v4h-4v-4zm-8 0h4v4H6v-4z"/></svg>
     </button>
 </div>
 `;
@@ -61,8 +62,21 @@ const chatBox = document.getElementById('chat-box');
 const chatContent = document.getElementById('chat-content');
 const userInput = document.getElementById('user-input');
 
+// AUTO POP-UP: Terbuka otomatis setelah 5 detik
+setTimeout(() => {
+    if (chatBox.style.display === 'none' || chatBox.style.display === '') {
+        toggleChat();
+    }
+}, 5000);
+
 window.toggleChat = function() {
     chatBox.style.display = (chatBox.style.display === 'none' || chatBox.style.display === '') ? 'flex' : 'none';
+};
+
+// Fungsi untuk Quick Reply
+window.sendQuickReply = function(text) {
+    userInput.value = text;
+    sendMessage();
 };
 
 function cleanAndFormat(text) {
@@ -86,28 +100,21 @@ window.sendMessage = async function() {
     chatContent.appendChild(typingDiv);
     chatContent.scrollTop = chatContent.scrollHeight;
 
-    const systemPrompt = `Kamu adalah Eka, Customer Service Efektifpedia. JANGAN gunakan simbol markdown. Link WA: ${WA_LINK}`;
+    const systemPrompt = `Kamu adalah Eka, CS Efektifpedia. JANGAN gunakan markdown. Jasa tulis mulai 15rb. Link WA: ${WA_LINK}`;
 
     try {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: "POST",
-            body: JSON.stringify({
-                "messages": [
-                    {"role": "system", "content": systemPrompt},
-                    {"role": "user", "content": message}
-                ]
-            })
+            body: JSON.stringify({ "messages": [{"role": "system", "content": systemPrompt}, {"role": "user", "content": message}] })
         });
 
         const data = await response.json();
-        const aiResponse = data.choices[0].message.content;
-
         chatContent.removeChild(typingDiv);
-        chatContent.innerHTML += `<div class="msg msg-ai"><strong>Eka:</strong> ${cleanAndFormat(aiResponse)}</div>`;
+        chatContent.innerHTML += `<div class="msg msg-ai"><strong>Eka:</strong> ${cleanAndFormat(data.choices[0].message.content)}</div>`;
         chatContent.scrollTop = chatContent.scrollHeight;
     } catch (error) {
         if(typingDiv) chatContent.removeChild(typingDiv);
-        chatContent.innerHTML += `<div class="msg msg-ai" style="color:red;">Koneksi sedang bermasalah, silakan coba lagi.</div>`;
+        chatContent.innerHTML += `<div class="msg msg-ai" style="color:red;">Error, silakan coba lagi.</div>`;
     }
 };
 

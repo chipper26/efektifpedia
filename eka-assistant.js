@@ -11,13 +11,18 @@ const chatHTML = `
     .chat-header { background: #0d6efd; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
     .chat-body { flex: 1; overflow-y: auto; padding: 15px; background: #f8f9fa; display: flex; flex-direction: column; gap: 10px; }
     .chat-footer { padding: 10px; border-top: 1px solid #eee; background: white; display: flex; gap: 8px; }
-    .msg { max-width: 85%; padding: 8px 12px; border-radius: 15px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; position: relative; }
+    .msg { max-width: 85%; padding: 8px 12px; border-radius: 15px; font-size: 14px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; }
     .msg-ai { background: #e2edff; color: #333; align-self: flex-start; border-bottom-left-radius: 2px; }
     .msg-user { background: #0d6efd; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-    .chat-btn { width: 60px; height: 60px; border-radius: 50%; background: #0d6efd; border: none; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 4px 15px rgba(13,110,253,0.4); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+    
+    /* Tombol Floating CS Baru */
+    .chat-btn { width: 60px; height: 60px; border-radius: 50%; background: #0d6efd; border: none; color: white; cursor: pointer; box-shadow: 0 4px 15px rgba(13,110,253,0.4); display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+    .chat-btn:hover { transform: scale(1.1); background: #0a58ca; }
+    .chat-btn svg { width: 32px; height: 32px; fill: currentColor; }
+
     .wa-btn-chat { display: inline-block; background: #25d366; color: white; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-weight: bold; font-size: 13px; margin-top: 10px; transition: 0.3s; }
     
-    /* Perbaikan Animasi Ngetik */
+    /* Animasi Ngetik */
     .typing-box { display: flex; gap: 4px; padding: 12px 15px; background: #e2edff; border-radius: 15px; align-self: flex-start; border-bottom-left-radius: 2px; margin-bottom: 5px; }
     .dot { width: 7px; height: 7px; background: #0d6efd; border-radius: 50%; animation: blink 1.4s infinite ease-in-out; }
     .dot:nth-child(2) { animation-delay: 0.2s; }
@@ -28,11 +33,11 @@ const chatHTML = `
 <div id="ai-chat-widget" style="position: fixed; bottom: 100px; right: 18px; z-index: 10000;">
     <div id="chat-box" class="chat-bubble">
         <div class="chat-header">
-            <span>🤖 Eka - Efektifpedia Asisten</span>
+            <span>🎧 Customer Service Eka</span>
             <span onclick="toggleChat()" style="cursor:pointer; font-size: 20px;">&times;</span>
         </div>
         <div id="chat-content" class="chat-body">
-            <div class="msg msg-ai">Halo! Saya <strong>Eka</strong>. Ada yang bisa saya bantu? ⚡</div>
+            <div class="msg msg-ai">Halo! Saya <strong>Eka</strong> dari Customer Service. Ada yang bisa saya bantu hari ini? ⚡</div>
         </div>
         <div class="chat-footer">
             <input type="text" id="user-input" placeholder="Tanya sesuatu..." style="flex: 1; border: 1px solid #ddd; border-radius: 20px; padding: 8px 15px; outline: none;">
@@ -41,7 +46,12 @@ const chatHTML = `
             </button>
         </div>
     </div>
-    <button id="chat-toggle" class="chat-btn" onclick="toggleChat()">🤖</button>
+    
+    <button id="chat-toggle" class="chat-btn" onclick="toggleChat()">
+        <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12v10h4v-8H4v-2c0-4.41 3.59-8 8-8s8 3.59 8 8v2h-2v8h4V12c0-5.52-4.48-10-10-10zM14 14h4v4h-4v-4zm-8 0h4v4H6v-4z"/>
+        </svg>
+    </button>
 </div>
 `;
 
@@ -67,18 +77,16 @@ window.sendMessage = async function() {
     const message = userInput.value.trim();
     if (!message) return;
 
-    // 1. Tampilkan pesan user
     chatContent.innerHTML += `<div class="msg msg-user">${message}</div>`;
     userInput.value = '';
     
-    // 2. Tampilkan indikator ngetik yang baru
     const typingDiv = document.createElement('div');
     typingDiv.className = "typing-box";
     typingDiv.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
     chatContent.appendChild(typingDiv);
     chatContent.scrollTop = chatContent.scrollHeight;
 
-    const systemPrompt = `Kamu adalah Eka, asisten AI Efektifpedia. JANGAN gunakan simbol markdown. Link WA: ${WA_LINK}`;
+    const systemPrompt = `Kamu adalah Eka, Customer Service Efektifpedia. JANGAN gunakan simbol markdown. Link WA: ${WA_LINK}`;
 
     try {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -94,15 +102,12 @@ window.sendMessage = async function() {
         const data = await response.json();
         const aiResponse = data.choices[0].message.content;
 
-        // 3. Hapus indikator ngetik
         chatContent.removeChild(typingDiv);
-
-        // 4. Munculkan jawaban asli
         chatContent.innerHTML += `<div class="msg msg-ai"><strong>Eka:</strong> ${cleanAndFormat(aiResponse)}</div>`;
         chatContent.scrollTop = chatContent.scrollHeight;
     } catch (error) {
         if(typingDiv) chatContent.removeChild(typingDiv);
-        chatContent.innerHTML += `<div class="msg msg-ai" style="color:red;">Maaf kawan, internet lagi kurang stabil. Coba lagi ya!</div>`;
+        chatContent.innerHTML += `<div class="msg msg-ai" style="color:red;">Koneksi sedang bermasalah, silakan coba lagi.</div>`;
     }
 };
 

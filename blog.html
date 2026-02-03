@@ -5,28 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <title>Blog - efektifpedia</title>
+    <title>Blog - Efektifpedia</title>
     <style>
       html, body { height: 100%; margin: 0; }
       body { display: flex; flex-direction: column; background-color: #f4f7f6; padding-top: 70px; }
       .content-wrapper { flex: 1 0 auto; }
       footer { flex-shrink: 0; }
 
-      .navbar-brand { font-weight: bold; letter-spacing: 1px; }
+      .card-blog { border: none; background: none; border-bottom: 1px solid #dee2e6; margin-bottom: 25px; padding-bottom: 25px; }
+      .card-blog img { width: 100%; height: 250px; object-fit: cover; border-radius: 8px; background-color: #eee; transition: 0.3s; }
+      .card-blog img:hover { opacity: 0.9; }
       
-      .card-blog { border: none; background: none; border-bottom: 1px solid #dee2e6; margin-bottom: 20px; padding-bottom: 20px; }
-      .card-blog img { width: 100%; height: 250px; object-fit: cover; border-radius: 8px; background-color: #eee; }
-      .category-badge { background: #e9ecef; color: #0d6efd; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 10px; display: inline-block; }
+      .category-badge { background: #e9ecef; color: #0d6efd; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; font-weight: bold; margin-bottom: 10px; display: inline-block; text-decoration: none; transition: 0.2s; }
+      .category-badge:hover { background: #0d6efd; color: white; cursor: pointer; }
+      
       .blog-title { font-weight: 700; color: #212529; text-decoration: none; font-size: 1.4rem; line-height: 1.3; display: block; }
       .blog-title:hover { color: #0d6efd; }
       .meta-info { font-size: 0.85rem; color: #6c757d; margin-top: 10px; }
       
       .sidebar-title { font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #0d6efd; padding-bottom: 5px; margin-bottom: 15px; font-size: 0.9rem; }
+      
+      /* Style Sidebar Kategori */
+      .list-category { list-style: none; padding: 0; }
+      .cat-link { text-decoration: none; color: #444; font-size: 0.95rem; display: block; padding: 6px 10px; border-radius: 5px; transition: 0.2s; }
+      .cat-link:hover, .cat-link.active { background: #0d6efd; color: white !important; }
+
       .popular-item { list-style: none; padding: 0; }
       .popular-item li { padding: 10px 0; border-bottom: 1px solid #eee; display: flex; align-items: flex-start; }
       .popular-item li::before { content: "●"; color: #0d6efd; margin-right: 10px; font-size: 0.8rem; }
-      .popular-link { text-decoration: none; color: #333; font-weight: 500; font-size: 0.95rem; line-height: 1.4; }
-      .popular-link:hover { color: #0d6efd; }
+      .popular-link { text-decoration: none; color: #333; font-weight: 500; font-size: 0.9rem; line-height: 1.4; }
+      
+      /* Pagination Styling */
+      .pagination .page-link { color: #0d6efd; border: none; margin: 0 3px; border-radius: 5px; font-weight: bold; }
+      .pagination .page-item.active .page-link { background-color: #0d6efd; color: white; }
 
       @media (max-width: 768px) {
         .card-blog img { height: 200px; }
@@ -37,18 +48,14 @@
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow-sm">
       <div class="container">
-        <a class="navbar-brand" href="./">efektifpedia</a>
+        <a class="navbar-brand fw-bold" href="./">efektifpedia</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="./">HOME</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link active" href="blog.html">BLOG</a>
-            </li>
+            <li class="nav-item"><a class="nav-link" href="./">HOME</a></li>
+            <li class="nav-item"><a class="nav-link active" href="blog.html">BLOG</a></li>
           </ul>
         </div>
       </div>
@@ -58,17 +65,34 @@
       <div class="container mt-4">
         <div class="row">
           <div class="col-lg-8">
-            <h5 class="sidebar-title">POSTINGAN TERBARU</h5>
+            <h5 class="sidebar-title" id="display-title">POSTINGAN TERBARU</h5>
+            
             <div id="blog-container">
               <div class="text-center p-5">
                 <div class="spinner-border text-primary"></div>
-                <p class="mt-2">Memuat artikel...</p>
+                <p class="mt-2">Mensejajarkan data...</p>
               </div>
             </div>
+
+            <nav aria-label="Page navigation" class="mt-4 mb-5">
+              <ul class="pagination justify-content-center" id="pagination-container"></ul>
+            </nav>
           </div>
 
           <div class="col-lg-4 mt-5 mt-lg-0">
             <div class="sticky-top" style="top: 90px;">
+              
+              <h5 class="sidebar-title">KATEGORI</h5>
+              <ul class="list-category mb-4">
+                <li><a href="blog.html" class="cat-link" data-category="all">Semua Topik</a></li>
+                <li><a href="?cat=Edukasi" class="cat-link" data-category="Edukasi">Edukasi</a></li>
+                <li><a href="?cat=Tips" class="cat-link" data-category="Tips">Tips</a></li>
+                <li><a href="?cat=Tech News" class="cat-link" data-category="Tech News">Tech News</a></li>
+                <li><a href="?cat=Digital Insight" class="cat-link" data-category="Digital Insight">Digital Insight</a></li>
+                <li><a href="?cat=Review & Tutorial" class="cat-link" data-category="Review & Tutorial">Review & Tutorial</a></li>
+                <li><a href="?cat=Innovation" class="cat-link" data-category="Innovation">Innovation</a></li>
+              </ul>
+
               <h5 class="sidebar-title">ARTIKEL TERPOPULER</h5>
               <ul class="popular-item" id="popular-container"></ul>
             </div>
@@ -79,92 +103,145 @@
 
     <footer class="bg-primary text-white text-center py-4">
       <div class="container">
-      <div class="mb-2">
-        <a href="redaksi.html" class="text-white text-decoration-none mx-2 small">REDAKSI</a> | 
-        <a href="blog.html" class="text-white text-decoration-none mx-2 small">BLOG</a>
-      </div>
-      <p class="m-0 small">created by 🔶 irawan</p>
+        <div class="mb-2">
+          <a href="redaksi.html" class="text-white text-decoration-none mx-2 small">REDAKSI</a> | 
+          <a href="blog.html" class="text-white text-decoration-none mx-2 small">BLOG</a>
+        </div>
+        <p class="m-0 small">created by 🔶 irawan</p>
       </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-      async function fetchPosts() {
+      let allPosts = [];
+      let filteredPosts = [];
+      const postsPerPage = 6;
+      let currentPage = 1;
+
+      async function fetchAllData() {
         const repo = "chipper26/efektifpedia";
-        const folder = "blog";
         const container = document.getElementById('blog-container');
-        const popularContainer = document.getElementById('popular-container');
-
+        
         try {
-          const response = await fetch(`https://api.github.com/repos/${repo}/contents/${folder}`);
+          const response = await fetch(`https://api.github.com/repos/${repo}/contents/blog`);
           const files = await response.json();
-          // Filter hanya file .md dan urutkan dari yang terbaru (berdasarkan nama file/waktu)
-          const posts = files.filter(f => f.name.endsWith('.md')).reverse();
-          
-          container.innerHTML = '';
-          popularContainer.innerHTML = '';
+          const mdFiles = files.filter(f => f.name.endsWith('.md')).reverse();
 
-          for (const [index, file] of posts.entries()) {
+          // Load metadata semua artikel sekaligus secara paralel
+          allPosts = await Promise.all(mdFiles.map(async file => {
             const rawRes = await fetch(file.download_url);
             const markdown = await rawRes.text();
             
             let title = file.name.replace('.md', '').replace(/-/g, ' ');
-            let thumb = "https://via.placeholder.com/800x450?text=Efektifpedia"; 
+            let thumb = "https://via.placeholder.com/800x450?text=Efektifpedia";
             let author = "Tim Efektifpedia";
             let category = "Tech News";
             let dateStr = "";
 
             if (markdown.startsWith('---')) {
               const fm = markdown.split('---')[1];
-              const tMatch = fm.match(/title:\s*["']?(.*?)["']?$/m);
-              const thumbMatch = fm.match(/thumbnail:\s*["']?(.*?)["']?$/m);
-              const authMatch = fm.match(/author:\s*["']?(.*?)["']?$/m);
-              const catMatch = fm.match(/category:\s*["']?(.*?)["']?$/m);
-              const dMatch = fm.match(/date:\s*["']?(.*?)["']?$/m);
-
-              if (tMatch) title = tMatch[1];
-              if (authMatch) author = authMatch[1];
-              if (catMatch) category = catMatch[1];
+              title = fm.match(/title:\s*["']?(.*?)["']?$/m)?.[1] || title;
+              author = fm.match(/author:\s*["']?(.*?)["']?$/m)?.[1] || author;
+              category = fm.match(/category:\s*["']?(.*?)["']?$/m)?.[1] || category;
               
-              // PERBAIKAN: Jika sudah link HTTPS (Pexels), gunakan langsung. Jika path lokal, baru tambah prefix GitHub.
-              if (thumbMatch && thumbMatch[1]) {
+              const thumbMatch = fm.match(/thumbnail:\s*["']?(.*?)["']?$/m);
+              if (thumbMatch) {
                 let path = thumbMatch[1].trim();
-                if (path.startsWith('http')) {
-                  thumb = path; // Link dari Pexels Bot
-                } else {
-                  if (path.startsWith('/')) path = path.substring(1);
-                  thumb = `https://raw.githubusercontent.com/${repo}/main/${path}`; // Gambar manual CMS
-                }
+                thumb = path.startsWith('http') ? path : `https://raw.githubusercontent.com/${repo}/main/${path}`;
               }
 
+              const dMatch = fm.match(/date:\s*["']?(.*?)["']?$/m);
               if (dMatch) {
                 const d = new Date(dMatch[1]);
                 dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
               }
             }
+            return { fileName: file.name, title, author, category, thumb, dateStr };
+          }));
 
-            const postUrl = `post.html?file=${file.name}`;
+          renderPopular();
+          handleRouting();
 
-            container.innerHTML += `
-              <div class="card card-blog">
-                <a href="${postUrl}">
-                   <img src="${thumb}" onerror="this.src='https://via.placeholder.com/800x450?text=No+Image'" class="mb-3" alt="${title}">
-                </a>
-                <span class="category-badge">${category}</span>
-                <a href="${postUrl}" class="blog-title text-capitalize">${title}</a>
-                <div class="meta-info">Oleh ${author} — ${dateStr}</div>
-              </div>`;
-
-            if(index < 6) {
-              popularContainer.innerHTML += `<li><a href="${postUrl}" class="popular-link text-capitalize">${title}</a></li>`;
-            }
-          }
         } catch (e) {
-          container.innerHTML = "<p class='text-center p-5'>Gagal memuat artikel.</p>";
+          container.innerHTML = "<p class='text-center p-5'>Gagal memproses daftar artikel.</p>";
         }
       }
-      fetchPosts();
+
+      function handleRouting() {
+        const params = new URLSearchParams(window.location.search);
+        const cat = params.get('cat');
+        
+        // Highlight sidebar
+        document.querySelectorAll('.cat-link').forEach(link => {
+          if (link.getAttribute('data-category') === (cat || 'all')) link.classList.add('active');
+        });
+
+        if (cat) {
+          filteredPosts = allPosts.filter(p => p.category.toLowerCase() === cat.toLowerCase());
+          document.getElementById('display-title').innerText = `KATEGORI: ${cat}`;
+        } else {
+          filteredPosts = allPosts;
+        }
+        
+        renderBlogPage(1);
+      }
+
+      function renderBlogPage(page) {
+        currentPage = page;
+        const container = document.getElementById('blog-container');
+        const pagination = document.getElementById('pagination-container');
+        container.innerHTML = '';
+
+        const start = (page - 1) * postsPerPage;
+        const end = start + postsPerPage;
+        const currentItems = filteredPosts.slice(start, end);
+
+        if (currentItems.length === 0) {
+          container.innerHTML = "<p class='text-center p-5'>Belum ada artikel di kategori ini.</p>";
+          pagination.innerHTML = '';
+          return;
+        }
+
+        currentItems.forEach(post => {
+          container.innerHTML += `
+            <div class="card card-blog">
+              <a href="post.html?file=${post.fileName}">
+                 <img src="${post.thumb}" onerror="this.src='https://via.placeholder.com/800x450?text=No+Image'" class="mb-3" alt="${post.title}">
+              </a>
+              <a href="?cat=${post.category}" class="category-badge">${post.category}</a>
+              <a href="post.html?file=${post.fileName}" class="blog-title text-capitalize">${post.title}</a>
+              <div class="meta-info">Oleh ${post.author} — ${post.dateStr}</div>
+            </div>`;
+        });
+
+        renderPagination();
+        window.scrollTo(0,0);
+      }
+
+      function renderPagination() {
+        const pagination = document.getElementById('pagination-container');
+        const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+        pagination.innerHTML = '';
+
+        if (totalPages <= 1) return;
+
+        for (let i = 1; i <= totalPages; i++) {
+          pagination.innerHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+              <button class="page-link" onclick="renderBlogPage(${i})">${i}</button>
+            </li>`;
+        }
+      }
+
+      function renderPopular() {
+        const container = document.getElementById('popular-container');
+        allPosts.slice(0, 5).forEach(post => {
+          container.innerHTML += `<li><a href="post.html?file=${post.fileName}" class="popular-link text-capitalize">${post.title}</a></li>`;
+        });
+      }
+
+      fetchAllData();
     </script>
   </body>
 </html>

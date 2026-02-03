@@ -1,0 +1,38 @@
+name: Efektifpedia Tutorial Bot
+
+on:
+  schedule:
+    # 22:15 UTC = 05:15 WIB (Postingan Subuh)
+    # 10:15 UTC = 17:15 WIB (Postingan Sore)
+    - cron: '15 22,10 * * *'
+  workflow_dispatch: 
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Requests
+        run: pip install requests
+
+      - name: Generate Tutorial Content
+        env:
+          # Pastikan kamu membuat secret baru dengan nama ini di GitHub Settings
+          API_AI_KEY: ${{secrets.OPENROUTER_API_KEY_TUTORIAL}}
+          PEXELS_API_KEY: ${{secrets.PEXELS_API_KEY}}
+        run: python tutorial_writer.py
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "bot-tutorial@efektifpedia.com"
+          git config --local user.name "Budi Tutorial"
+          git add .
+          git commit -m "Tutorial: Auto Update Guide - $(date)" || exit 0
+          git push

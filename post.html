@@ -101,14 +101,13 @@
           const btn = document.getElementById('btn-speak');
           const status = document.getElementById('audio-status');
           
-          // Bersihkan Markdown, HTML, dan spasi berlebih
           const cleanText = text.replace(/<[^>]*>?/gm, '')
                                 .replace(/[#*`_]/g, '')
                                 .replace(/\s+/g, ' ')
                                 .trim();
 
           btn.onclick = () => {
-              // Jika browser sedang memproses suara, batalkan dulu
+              // Jika sedang berbicara atau sistem sedang sibuk, batalkan
               if (synth.speaking || isSpeaking) {
                   synth.cancel();
                   resetBtn();
@@ -116,11 +115,11 @@
               }
 
               if (cleanText) {
+                  // KHUSUS MOBILE: Objek harus dibuat di dalam scope klik
                   utterance = new SpeechSynthesisUtterance(cleanText);
                   utterance.lang = 'id-ID';
                   utterance.rate = 1.0;
                   
-                  // Pastikan daftar suara dimuat sebelum memilih
                   const voices = synth.getVoices();
                   const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
                   if (idVoice) utterance.voice = idVoice;
@@ -135,7 +134,13 @@
                   utterance.onend = () => resetBtn();
                   utterance.onerror = () => resetBtn();
 
+                  // Eksekusi bicara
                   synth.speak(utterance);
+
+                  // Trick HP: Paksa jalan jika antrean macet
+                  if (synth.paused) {
+                      synth.resume();
+                  }
               }
           };
 
@@ -204,10 +209,15 @@
         }
       }
 
-      // Memastikan daftar voices terisi (Penting untuk Chrome)
-      if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = () => synth.getVoices();
-      }
+      // Pre-load voices untuk mobile
+      window.addEventListener('load', () => {
+          if ('speechSynthesis' in window) {
+              synth.getVoices();
+              if (synth.onvoiceschanged !== undefined) {
+                  synth.onvoiceschanged = () => synth.getVoices();
+              }
+          }
+      });
 
       loadPost();
     </script>

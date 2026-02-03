@@ -22,7 +22,6 @@
       .author-name { font-weight: bold; color: #333; }
       .publish-date { color: #6c757d; font-size: 0.95rem; }
 
-      /* Audio Player Custom Style */
       .audio-box { background: #f1f3f5; border-radius: 10px; padding: 15px; border-left: 5px solid #0d6efd; }
       #btn-speak { transition: 0.3s; font-weight: bold; }
       
@@ -96,44 +95,55 @@
     <script>
       let isSpeaking = false;
       const synth = window.speechSynthesis;
-      let utterance = new SpeechSynthesisUtterance();
+      let utterance = null;
 
       function setupAudioReader(text) {
           const btn = document.getElementById('btn-speak');
           const status = document.getElementById('audio-status');
           
-          // Bersihkan Markdown & HTML agar suara jernih
-          const cleanText = text.replace(/<[^>]*>?/gm, '').replace(/[#*`_]/g, '');
+          // Bersihkan Markdown, HTML, dan spasi berlebih
+          const cleanText = text.replace(/<[^>]*>?/gm, '')
+                                .replace(/[#*`_]/g, '')
+                                .replace(/\s+/g, ' ')
+                                .trim();
 
           btn.onclick = () => {
-              if (!isSpeaking) {
-                  utterance.text = cleanText;
+              // Jika browser sedang memproses suara, batalkan dulu
+              if (synth.speaking || isSpeaking) {
+                  synth.cancel();
+                  resetBtn();
+                  return;
+              }
+
+              if (cleanText) {
+                  utterance = new SpeechSynthesisUtterance(cleanText);
                   utterance.lang = 'id-ID';
                   utterance.rate = 1.0;
-
-                  // Ambil suara Indonesia terbaik yang tersedia
+                  
+                  // Pastikan daftar suara dimuat sebelum memilih
                   const voices = synth.getVoices();
                   const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
                   if (idVoice) utterance.voice = idVoice;
 
+                  utterance.onstart = () => {
+                      btn.innerHTML = '<i class="bi bi-pause-circle-fill me-2"></i>Berhenti';
+                      btn.classList.replace('btn-primary', 'btn-danger');
+                      status.innerText = "Sedang membacakan...";
+                      isSpeaking = true;
+                  };
+
+                  utterance.onend = () => resetBtn();
+                  utterance.onerror = () => resetBtn();
+
                   synth.speak(utterance);
-                  btn.innerHTML = '<i class="bi bi-pause-circle-fill me-2"></i>Berhenti';
-                  btn.classList.replace('btn-primary', 'btn-danger');
-                  status.innerText = "Sedang membacakan...";
-                  isSpeaking = true;
-              } else {
-                  synth.cancel();
-                  resetBtn();
               }
           };
 
-          utterance.onend = () => resetBtn();
-          
           function resetBtn() {
               synth.cancel();
               btn.innerHTML = '<i class="bi bi-play-circle-fill me-2"></i>Dengarkan';
-              btn.classList.replace('btn-danger', 'btn-primary');
-              status.innerText = "Pembacaan selesai";
+              if(btn.classList.contains('btn-danger')) btn.classList.replace('btn-danger', 'btn-primary');
+              status.innerText = "Pembacaan berhenti/selesai";
               isSpeaking = false;
           }
       }
@@ -186,7 +196,6 @@
           document.getElementById('article-header').style.display = 'block';
           document.title = title + " - Efektifpedia";
 
-          // Aktifkan Fitur Audio
           setupAudioReader(markdown);
           
         } catch (e) {
@@ -195,8 +204,11 @@
         }
       }
 
-      // Pre-load voices untuk Chrome/Edge
-      window.speechSynthesis.getVoices();
+      // Memastikan daftar voices terisi (Penting untuk Chrome)
+      if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = () => synth.getVoices();
+      }
+
       loadPost();
     </script>
   </body>

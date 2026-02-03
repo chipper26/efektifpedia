@@ -5,7 +5,6 @@ import random
 from datetime import datetime
 
 # --- KONFIGURASI AMAN ---
-# Menggunakan API Key cadangan sesuai strategi kita
 API_KEY = os.getenv("OPENROUTER_API_KEY_BACKUP") 
 PEXELS_KEY = os.getenv("PEXELS_API_KEY")
 URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -13,14 +12,13 @@ MODEL = "google/gemini-2.0-flash-001"
 
 FOLDER_TUJUAN = "blog" 
 
-# --- DAFTAR PENULIS (Karyawan Efektifpedia) ---
+# --- DAFTAR PENULIS ---
 DAFTAR_PENULIS = [
     "Nadira Kusuma", "Budi Santoso", "Citra Anggraini",
     "Andi Wijaya", "Raka Santosa", "Aditya Mahendra"
 ]
 
-# --- DAFTAR BIDANG EDUKASI (UMUM) ---
-# AI akan memilih satu bidang ini lalu menentukan sub-topik sendiri
+# --- DAFTAR BIDANG EDUKASI ---
 DAFTAR_BIDANG = [
     "Cloud Computing (SaaS, IaaS, PaaS, Virtualisasi)",
     "Arsitektur Software (Microservices, Monolith, Decoupling)",
@@ -35,15 +33,16 @@ DAFTAR_BIDANG = [
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 BIDANG_HARI_INI = random.choice(DAFTAR_BIDANG)
 
+# --- PROMPT DENGAN INSTRUKSI VISUAL KHUSUS ---
 PROMPT = f"""
 Tugas kamu adalah menjadi pengajar teknologi di Efektifpedia.
 HARI INI FOKUS PADA BIDANG: {BIDANG_HARI_INI}.
 
-INSTRUKSI:
+INSTRUKSI ARTIKEL:
 1. Pilih satu sub-topik spesifik dari bidang tersebut yang penting untuk dipelajari pemula.
 2. Tulis artikel edukasi mendalam minimal 600 kata dalam Bahasa Indonesia.
 3. Gunakan gaya bahasa yang mudah dipahami, sertakan contoh kasus atau contoh kode jika relevan.
-4. JANGAN membuat judul yang membosankan. Buat judul yang bikin orang ingin belajar.
+4. Gunakan format Markdown murni.
 
 Wajib sertakan Frontmatter di bagian paling atas:
 ---
@@ -53,26 +52,35 @@ category: "Edukasi"
 author: "{PENULIS_HARI_INI}"
 ---
 
-PENTING: Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail di Pexels (contoh: 'coding', 'server', 'books'). Tulis saja katanya di baris baru tanpa tanda baca.
+PENTING UNTUK THUMBNAIL:
+Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci (keyword) bahasa Inggris yang paling mewakili visual artikel ini agar relevan. 
+Contoh: jika bahas database gunakan 'database', jika bahas keamanan gunakan 'cyber-security', jika bahas kode gunakan 'programming'.
+Tulis saja SATU KATA tersebut di baris paling terakhir tanpa tanda baca.
 """
 
 def get_pexels_thumbnail(query):
-    # Fallback gambar edukasi jika API bermasalah
+    """Fungsi mengambil URL gambar yang relevan dari Pexels"""
     fallback_img = "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
     if not PEXELS_KEY:
         return fallback_img
     
+    # Membersihkan query: ambil kata terakhir, hapus titik atau kutip
+    clean_query = query.strip().lower().replace(".", "").replace('"', "").split()[-1]
+    
     headers = {"Authorization": PEXELS_KEY}
-    pexels_url = f"https://api.pexels.com/v1/search?query={query}&per_page=1&orientation=landscape"
+    # Ambil 3 pilihan agar bisa di-random sedikit tapi tetap relevan
+    pexels_url = f"https://api.pexels.com/v1/search?query={clean_query}&per_page=3&orientation=landscape"
     
     try:
-        res = requests.get(pexels_url, headers=headers)
+        res = requests.get(pexels_url, headers=headers, timeout=10)
         if res.status_code == 200:
             data = res.json()
             if data['photos']:
-                return data['photos'][0]['src']['landscape']
-    except Exception:
-        pass
+                # Pilih secara acak dari 3 hasil teratas agar tidak bosan tapi tetap nyambung
+                return random.choice(data['photos'])['src']['landscape']
+    except Exception as e:
+        print(f"⚠️ Gagal mengambil gambar Pexels: {e}")
+    
     return fallback_img
 
 def tulis_artikel():
@@ -82,12 +90,15 @@ def tulis_artikel():
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://efektifpedia.com",
+        "X-Title": "Efektifpedia EduBot"
     }
     
     data = {
         "model": MODEL,
-        "messages": [{"role": "user", "content": PROMPT}]
+        "messages": [{"role": "user", "content": PROMPT}],
+        "temperature": 0.7 # Kreativitas menengah agar edukasi tidak kaku
     }
 
     print(f"📚 EduBot sedang menyusun materi tentang {BIDANG_HARI_INI}...")
@@ -97,13 +108,15 @@ def tulis_artikel():
         if response.status_code == 200:
             raw_content = response.json()['choices'][0]['message']['content']
             
-            lines = raw_content.strip().split('\n')
-            keyword = lines[-1].strip().lower()
+            # Pisahkan body artikel dengan keyword terakhir
+            lines = [l for l in raw_content.strip().split('\n') if l.strip()]
+            keyword = lines[-1].strip()
             artikel_body = "\n".join(lines[:-1]) 
             
+            # Ambil hanya URL-nya saja (Hemat Storage GitHub!)
             img_url = get_pexels_thumbnail(keyword)
 
-            # Injeksi thumbnail ke frontmatter
+            # Masukkan thumbnail URL ke dalam Frontmatter
             konten_final = artikel_body.replace(
                 f"author: \"{PENULIS_HARI_INI}\"", 
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
@@ -112,17 +125,18 @@ def tulis_artikel():
             if not os.path.exists(FOLDER_TUJUAN):
                 os.makedirs(FOLDER_TUJUAN)
             
-            # File disimpan dengan awalan edu agar rapi
+            # Penamaan file dengan awalan edu agar terorganisir
             filename = os.path.join(FOLDER_TUJUAN, f"edu-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
             
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Bidang: {BIDANG_HARI_INI} | Penulis: {PENULIS_HARI_INI}")
+            print(f"✅ BERHASIL! Materi: {BIDANG_HARI_INI}")
+            print(f"🖼️ Relevansi Gambar: {keyword} -> {img_url}")
         else:
-            print(f"❌ Gagal. Status: {response.status_code}")
+            print(f"❌ Gagal di OpenRouter. Status: {response.status_code}")
     except Exception as e:
-        print(f"⚠️ Kendala: {e}")
+        print(f"⚠️ Kendala teknis: {e}")
 
 if __name__ == "__main__":
     tulis_artikel()

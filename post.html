@@ -20,16 +20,17 @@
       .entry-title { font-size: 2.5rem; font-weight: 800; margin-top: 10px; color: #000; line-height: 1.2; }
       .entry-meta { border-top: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6; padding: 10px 0; margin: 20px 0; }
       
-      .audio-box { background: #f1f3f5; border-radius: 10px; padding: 15px; border-left: 5px solid #0d6efd; }
+      .audio-box { background: #fff; border-radius: 12px; padding: 15px; border: 1px solid #dee2e6; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
       #btn-speak { transition: 0.3s; font-weight: bold; }
       
-      /* HIGHLIGHT STYLE - BIRU PUDAR PER KATA */
+      /* HIGHLIGHT PER KATA - BIRU PUDAR ELEGAN */
       .word-active { 
-        background-color: rgba(13, 110, 253, 0.2); 
-        border-radius: 4px; 
+        background-color: rgba(13, 110, 253, 0.2); /* Biru muda transparan */
         color: #0d6efd;
-        transition: all 0.1s ease;
-        padding: 0 2px;
+        border-radius: 4px;
+        padding: 2px 0;
+        box-shadow: 0 2px 0 rgba(13, 110, 253, 0.3);
+        transition: background 0.1s ease;
       }
 
       .featured-image { width: 100%; max-height: 450px; object-fit: cover; border-radius: 8px; margin-bottom: 2rem; }
@@ -64,12 +65,10 @@
             </div>
 
             <div class="audio-box mb-4 d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <button id="btn-speak" class="btn btn-primary rounded-pill px-4 me-3">
-                        <i class="bi bi-play-circle-fill me-2"></i>Dengarkan
-                    </button>
-                    <span id="audio-status" class="small text-muted italic">Tersedia versi audio</span>
-                </div>
+                <button id="btn-speak" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-play-circle-fill me-2"></i>Dengarkan
+                </button>
+                <span id="audio-status" class="small text-muted italic">Fitur audio aktif</span>
             </div>
 
             <img id="article-thumbnail" class="featured-image" style="display: none;" alt="Thumbnail">
@@ -87,28 +86,27 @@
         <p class="m-0 small">created by 🔶 irawan</p>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <script>
       let isSpeaking = false;
-      let sentences = [];
-      let currentSentenceIndex = 0;
-      let wordElements = [];
       const synth = window.speechSynthesis;
+      let wordsElements = [];
 
-      // Membungkus kata demi kata agar bisa disorot secara detail
       function prepareWords() {
-          const content = document.getElementById('post-content');
-          const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null, false);
+          const contentArea = document.getElementById('post-content');
+          const walker = document.createTreeWalker(contentArea, NodeFilter.SHOW_TEXT, null, false);
           let node;
           const textNodes = [];
 
           while (node = walker.nextNode()) textNodes.push(node);
 
           textNodes.forEach(textNode => {
-              const words = textNode.nodeValue.split(/(\s+)/);
+              const textValue = textNode.nodeValue;
+              // Memecah kata tapi tetap mempertahankan spasi asli
+              const words = textValue.split(/(\s+)/);
               const fragment = document.createDocumentFragment();
+
               words.forEach(word => {
                   if (word.trim().length > 0) {
                       const span = document.createElement('span');
@@ -121,100 +119,72 @@
               });
               textNode.parentNode.replaceChild(fragment, textNode);
           });
-          wordElements = Array.from(document.querySelectorAll('.article-word'));
+          wordsElements = Array.from(document.querySelectorAll('.article-word'));
       }
 
-      function setupAudioReader(rawMarkdown) {
+      function setupAudio() {
           const btn = document.getElementById('btn-speak');
           const status = document.getElementById('audio-status');
           
           prepareWords();
-
-          // Gunakan pembersihan teks yang stabil dari versimu
-          const cleanText = rawMarkdown.replace(/<[^>]*>?/gm, '').replace(/[#*`_]/g, '').trim();
-          sentences = cleanText.match(/[^\.!\?]+[\.!\?]+/g) || [cleanText];
+          const fullText = wordsElements.map(el => el.innerText).join(' ');
 
           btn.onclick = () => {
-              if (isSpeaking) {
-                  stopAudio();
-                  return;
-              }
-              startAudio();
-          };
-
-          function startAudio() {
-              isSpeaking = true;
-              currentSentenceIndex = 0;
-              btn.innerHTML = '<i class="bi bi-stop-circle-fill me-2"></i>Berhenti';
-              btn.classList.replace('btn-primary', 'btn-danger');
-              status.innerText = "Sedang membacakan...";
-              speakNext();
-          }
-
-          function speakNext() {
-              if (!isSpeaking || currentSentenceIndex >= sentences.length) {
-                  stopAudio();
+              if (synth.speaking) {
+                  synth.cancel();
+                  resetUI();
                   return;
               }
 
-              const text = sentences[currentSentenceIndex].trim();
-              const utterance = new SpeechSynthesisUtterance(text);
+              const utterance = new SpeechSynthesisUtterance(fullText);
               utterance.lang = 'id-ID';
+              utterance.rate = 1.0;
 
-              // LOGIKA HIGHLIGHT PER KATA
+              // HIGH ACCURACY TRACKING
               utterance.onboundary = (event) => {
                   if (event.name === 'word') {
                       const charIndex = event.charIndex;
-                      // Cari kata yang sedang dibaca di dalam kalimat ini
-                      const wordsInSent = text.split(' ');
-                      let charCounter = 0;
-                      let targetWord = "";
+                      let currentChars = 0;
 
-                      for (let w of wordsInSent) {
-                          if (charCounter >= charIndex) {
-                              targetWord = w;
+                      for (let i = 0; i < wordsElements.length; i++) {
+                          const wordText = wordsElements[i].innerText;
+                          if (currentChars >= charIndex) {
+                              document.querySelectorAll('.word-active').forEach(el => el.classList.remove('word-active'));
+                              
+                              const target = wordsElements[i];
+                              target.classList.add('word-active');
+                              
+                              // Auto Scroll Center
+                              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                               break;
                           }
-                          charCounter += w.length + 1;
-                      }
-
-                      // Sinkronkan ke elemen DOM
-                      const targetEl = wordElements.find(el => 
-                          el.innerText.includes(targetWord.replace(/[^\w]/g, '')) && 
-                          !el.classList.contains('word-active')
-                      );
-
-                      if (targetEl) {
-                          document.querySelectorAll('.word-active').forEach(el => el.classList.remove('word-active'));
-                          targetEl.classList.add('word-active');
-                          // AUTO SCROLL
-                          targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          currentChars += wordText.length + 1; // +1 untuk estimasi spasi
                       }
                   }
               };
 
-              utterance.onend = () => {
-                  currentSentenceIndex++;
-                  speakNext();
+              utterance.onstart = () => {
+                  isSpeaking = true;
+                  btn.innerHTML = '<i class="bi bi-stop-circle-fill me-2"></i>Berhenti';
+                  btn.classList.replace('btn-primary', 'btn-danger');
+                  status.innerText = "Sedang membaca...";
               };
 
-              utterance.onerror = () => stopAudio();
-
-              const voices = synth.getVoices();
-              const idVoice = voices.find(v => v.lang.includes('id'));
-              if (idVoice) utterance.voice = idVoice;
+              utterance.onend = () => resetUI();
+              utterance.onerror = () => resetUI();
 
               synth.speak(utterance);
+              // Bypass Chrome Mobile Pause
               if (synth.paused) synth.resume();
-          }
+          };
 
-          function stopAudio() {
+          function resetUI() {
               isSpeaking = false;
               synth.cancel();
-              document.querySelectorAll('.word-active').forEach(el => el.classList.remove('word-active'));
               btn.innerHTML = '<i class="bi bi-play-circle-fill me-2"></i>Dengarkan';
               if(btn.classList.contains('btn-danger')) btn.classList.replace('btn-danger', 'btn-primary');
-              status.innerText = "Tersedia versi audio";
+              status.innerText = "Fitur audio aktif";
+              document.querySelectorAll('.word-active').forEach(el => el.classList.remove('word-active'));
           }
       }
 
@@ -234,15 +204,22 @@
           const fm = parts[1];
           const content = parts.slice(2).join('---').trim();
 
-          document.getElementById('article-title').innerText = fm.match(/title:\s*(.*)/)?.[1] || "";
-          document.getElementById('author-name').innerText = fm.match(/author:\s*(.*)/)?.[1] || "Tim";
+          document.getElementById('article-title').innerText = fm.match(/title:\s*["']?(.*?)["']?$/m)?.[1] || "";
+          document.getElementById('author-name').innerText = fm.match(/author:\s*["']?(.*?)["']?$/m)?.[1] || "Tim";
+          document.getElementById('article-category').innerText = fm.match(/category:\s*["']?(.*?)["']?$/m)?.[1] || "Edukasi";
           
+          const dMatch = fm.match(/date:\s*["']?(.*?)["']?$/m);
+          if (dMatch) {
+            const d = new Date(dMatch[1]);
+            document.getElementById('publish-date').innerText = d.toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+          }
+
           contentArea.innerHTML = marked.parse(content);
           loading.style.display = 'none';
           document.getElementById('article-header').style.display = 'block';
-          
-          setTimeout(() => setupAudioReader(content), 600);
-          
+
+          // Delay sedikit biar render HTML selesai sempurna sebelum di-wrap
+          setTimeout(setupAudio, 600);
         } catch (e) {
           loading.innerText = "Gagal memuat artikel.";
         }

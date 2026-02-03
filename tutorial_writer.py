@@ -5,6 +5,7 @@ import random
 from datetime import datetime
 
 # --- KONFIGURASI AMAN ---
+# Menggunakan API_AI_KEY sesuai mapping di file .yml
 API_KEY = str(os.getenv("API_AI_KEY", "")).strip() 
 PEXELS_KEY = str(os.getenv("PEXELS_API_KEY", "")).strip()
 URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -13,10 +14,7 @@ MODEL = "google/gemini-2.0-flash-001"
 FOLDER_TUJUAN = "blog" 
 
 # --- DAFTAR PENULIS TETAP ---
-DAFTAR_PENULIS = [
-    "Nadira Kusuma", "Budi Santoso", "Citra Anggraini",
-    "Andi Wijaya", "Raka Santosa", "Aditya Mahendra"
-]
+DAFTAR_PENULIS = ["Nadira Kusuma", "Budi Santoso", "Citra Anggraini", "Andi Wijaya", "Raka Santosa", "Aditya Mahendra"]
 
 # --- DAFTAR BIDANG REVIEW & TUTORIAL ---
 DAFTAR_BIDANG = [
@@ -33,12 +31,12 @@ DAFTAR_BIDANG = [
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 BIDANG_HARI_INI = random.choice(DAFTAR_BIDANG)
 
-# --- PROMPT (DISESUAIKAN DENGAN STRUKTUR HTML BLOG) ---
+# --- PROMPT (LOGIKA KATEGORI & KEYWORD GAMBAR) ---
 PROMPT = f"""
-Tulis artikel untuk Efektifpedia.
-BIDANG: {BIDANG_HARI_INI}.
+Tulis artikel tutorial/review untuk blog Efektifpedia.
+FOKUS MATERI: {BIDANG_HARI_INI}.
 
-WAJIB FRONTMATTER (Pastikan kategori menggunakan tanda kutip dua):
+Wajib sertakan Frontmatter di bagian paling atas:
 ---
 title: "[JUDUL MENARIK]"
 date: "{datetime.now().strftime('%Y-%m-%d')}"
@@ -48,37 +46,32 @@ author: "{PENULIS_HARI_INI}"
 
 INSTRUKSI:
 1. Tulis minimal 600 kata dalam Bahasa Indonesia.
-2. Gaya bahasa profesional namun mudah dimengerti.
+2. Berikan langkah praktis atau analisis kelebihan & kekurangan.
 3. Gunakan Markdown murni.
 
-PENTING UNTUK VISUAL:
-Setelah artikel selesai, di baris paling terakhir sendiri, tuliskan 3 kata kunci bahasa Inggris yang spesifik menggambarkan isi artikel untuk mencari gambar di Pexels.
-Contoh jika bahas ChatGPT: 'chatgpt robot laptop'
-Contoh jika bahas Smartphone: 'smartphone camera tech'
-Tulis 3 kata tersebut tanpa tanda baca apapun.
+PENTING UNTUK GAMBAR:
+Di baris paling terakhir sendiri setelah artikel selesai, tuliskan tepat satu kata kunci bahasa Inggris yang paling mewakili visual artikel (contoh: 'laptop', 'code', 'smartphone', 'robot'). Tulis saja satu kata tersebut tanpa tanda baca.
 """
 
-def get_pexels_thumbnail(query):
-    """Fungsi mengambil gambar dengan query jamak agar lebih akurat"""
+def get_pexels_url(query):
+    """Logika contek: Mengambil satu URL gambar resmi dari Pexels"""
     fallback_img = "https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&w=800"
-    if not PEXELS_KEY: return fallback_img
-    
-    # Membersihkan query dari baris terakhir AI
-    clean_query = query.strip().lower().replace(".", "").replace('"', "")
+    if not PEXELS_KEY:
+        return fallback_img
     
     headers = {"Authorization": PEXELS_KEY}
-    # Mencari gambar landscape yang relevan
-    pexels_url = f"https://api.pexels.com/v1/search?query={clean_query}&per_page=5&orientation=landscape"
+    # Per page 1 agar efisien sesuai logika contek
+    pexels_url = f"https://api.pexels.com/v1/search?query={query}&per_page=1&orientation=landscape"
     
     try:
         res = requests.get(pexels_url, headers=headers, timeout=15)
         if res.status_code == 200:
             data = res.json()
             if data['photos']:
-                # Ambil satu secara acak dari 5 hasil agar bervariasi
-                return random.choice(data['photos'])['src']['landscape']
-    except:
-        pass
+                return data['photos'][0]['src']['landscape']
+    except Exception as e:
+        print(f"⚠️ Gagal mengambil link Pexels: {e}")
+    
     return fallback_img
 
 def tulis_artikel():
@@ -89,7 +82,8 @@ def tulis_artikel():
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://efektifpedia.com"
+        "HTTP-Referer": "https://efektifpedia.com",
+        "X-Title": "Efektifpedia TutorialBot"
     }
     
     payload = {
@@ -104,19 +98,23 @@ def tulis_artikel():
         response = requests.post(URL, headers=headers, json=payload, timeout=60)
         
         if response.status_code == 200:
-            res_data = response.json()
-            raw_content = res_data['choices'][0]['message']['content']
+            raw_content = response.json()['choices'][0]['message']['content']
             
+            # --- LOGIKA EKSTRAKSI CONTEK ---
             lines = [l for l in raw_content.strip().split('\n') if l.strip()]
-            keyword = lines[-1].strip() # 3 kata kunci terakhir
+            # Mengambil tepat satu kata kunci di baris terakhir
+            keyword = lines[-1].strip().lower().split()[-1] 
             artikel_body = "\n".join(lines[:-1]) 
             
-            img_url = get_pexels_thumbnail(keyword)
+            # Ambil URL Gambar
+            img_url = get_pexels_url(keyword)
 
-            # Injeksi thumbnail dan memastikan format frontmatter terbaca script blog.html
+            # Injeksi thumbnail dan kunci kategori agar tidak pecah di blog.html
             konten_final = artikel_body.replace(
                 f"author: \"{PENULIS_HARI_INI}\"", 
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
+            ).replace(
+                'category: Review & Tutorial', 'category: "Review & Tutorial"'
             )
             
             if not os.path.exists(FOLDER_TUJUAN):
@@ -127,8 +125,8 @@ def tulis_artikel():
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Gambar dicari dengan query: {keyword}")
-            print(f"🔗 URL Gambar: {img_url}")
+            print(f"✅ BERHASIL! Keyword Gambar: {keyword}")
+            print(f"🔗 Thumbnail: {img_url}")
         else:
             print(f"❌ API Error: {response.status_code}")
             

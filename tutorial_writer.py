@@ -33,28 +33,27 @@ DAFTAR_BIDANG = [
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 BIDANG_HARI_INI = random.choice(DAFTAR_BIDANG)
 
-# --- PROMPT (DIPERKETAT PADA KATEGORI) ---
+# --- PROMPT (DIPERBAIKI UNTUK FILTER KATEGORI) ---
 PROMPT = f"""
-Tugas kamu adalah menjadi pakar teknologi di Efektifpedia.
-HARI INI FOKUS PADA BIDANG: {BIDANG_HARI_INI}.
+Tugas kamu adalah menulis artikel untuk Efektifpedia.
+FOKUS MATERI: {BIDANG_HARI_INI}.
 
-INSTRUKSI ARTIKEL:
-1. Pilih satu sub-topik spesifik dari bidang tersebut.
-2. Tulis artikel edukasi/tutorial mendalam minimal 600 kata dalam Bahasa Indonesia.
-3. Gunakan format Markdown murni.
-
-Wajib sertakan Frontmatter di bagian paling atas:
+Wajib sertakan Frontmatter di bagian paling atas dengan format PERSIS seperti ini:
 ---
-title: "[JUDUL MENARIK DAN SOLUTIF]"
+title: "[JUDUL MENARIK]"
 date: "{datetime.now().strftime('%Y-%m-%d')}"
 category: "Review & Tutorial"
 author: "{PENULIS_HARI_INI}"
 ---
 
+INSTRUKSI KONTEN:
+1. Tulis minimal 600 kata dalam Bahasa Indonesia.
+2. Artikel harus berupa Panduan/Tutorial atau Review Mendalam.
+3. Gunakan Markdown murni.
+
 PENTING:
-- Kategori HARUS tertulis tepat "Review & Tutorial" (gunakan tanda kutip).
-- Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci (keyword) bahasa Inggris untuk visual (Contoh: technology, laptop, coding).
-- Tulis saja SATU KATA tersebut di baris paling terakhir tanpa tanda baca.
+Kategori wajib menggunakan tanda kutip "Review & Tutorial" agar simbol ampersand terbaca oleh sistem filter blog.
+Di baris paling terakhir (setelah artikel selesai), tuliskan satu kata kunci bahasa Inggris untuk gambar (Contoh: smartphone).
 """
 
 def get_pexels_thumbnail(query):
@@ -94,7 +93,7 @@ def tulis_artikel():
         "temperature": 0.7
     }
 
-    print(f"🛠️ Sedang menyusun 'Review & Tutorial' oleh {PENULIS_HARI_INI}...")
+    print(f"🛠️ Sedang memproses artikel oleh {PENULIS_HARI_INI}...")
     
     try:
         response = requests.post(URL, headers=headers, json=payload, timeout=60)
@@ -103,14 +102,13 @@ def tulis_artikel():
             res_data = response.json()
             raw_content = res_data['choices'][0]['message']['content']
             
-            # Memisahkan body dan keyword
             lines = [l for l in raw_content.strip().split('\n') if l.strip()]
             keyword = lines[-1].strip()
             artikel_body = "\n".join(lines[:-1]) 
             
             img_url = get_pexels_thumbnail(keyword)
 
-            # Injeksi thumbnail dan memastikan kategori rapi
+            # Memastikan kategori terbungkus kutip saat replace author
             konten_final = artikel_body.replace(
                 f"author: \"{PENULIS_HARI_INI}\"", 
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
@@ -124,8 +122,7 @@ def tulis_artikel():
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Kategori: Review & Tutorial")
-            print(f"🖼️ Gambar: {img_url}")
+            print(f"✅ BERHASIL! File tersimpan: {filename}")
         else:
             print(f"❌ API Error: {response.status_code}")
             

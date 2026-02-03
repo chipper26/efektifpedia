@@ -1,5 +1,5 @@
 /**
- * Efektifpedia Ramadan Engine - V2 (Fixed Position)
+ * Efektifpedia Ramadan Engine - V3 (Inject Under Navbar)
  */
 
 const CONFIG_RAMADAN = {
@@ -9,46 +9,40 @@ const CONFIG_RAMADAN = {
 };
 
 function initRamadanFeature() {
-    // 1. Cek apakah elemen sudah ada (biar tidak double)
+    // 1. Cek apakah elemen sudah ada
     if (document.getElementById('ramadan-special-bar')) return;
 
     // 2. Buat elemen Banner
     const banner = document.createElement('div');
     banner.id = "ramadan-special-bar";
     
-    // CSS yang lebih kuat untuk menimpa Navbar
+    // Style: Tidak lagi fixed, tapi mengikuti aliran dokumen (static)
+    // Diletakkan tepat di bawah navbar
     banner.style.cssText = `
-        background: linear-gradient(45deg, #0d6efd, #1a1a1a) !important;
-        color: #ffca28 !important;
-        text-align: center !important;
-        padding: 12px 10px !important;
-        font-size: 14px !important;
-        font-weight: bold !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        z-index: 99999 !important;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.3) !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        gap: 10px !important;
-        border-bottom: 2px solid #ffca28 !important;
+        background: linear-gradient(90deg, #1e3c72, #2a5298);
+        color: #ffca28;
+        text-align: center;
+        padding: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        width: 100%;
+        box-shadow: inset 0 -2px 5px rgba(0,0,0,0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 2px solid #ffca28;
     `;
     
-    banner.innerHTML = `<span id="ramadan-text">Menyiapkan info Ramadan...</span>`;
-    document.body.prepend(banner);
+    banner.innerHTML = `<i class="bi bi-moon-stars-fill"></i> <span id="ramadan-text">Menghitung hari...</span>`;
 
-    // 3. Dorong Navbar kamu ke bawah agar tidak tertutup
-    // Navbar Bootstrap biasanya punya class .fixed-top
-    const navbar = document.querySelector('.navbar.fixed-top');
+    // 3. Masukkan tepat di bawah Navbar
+    const navbar = document.querySelector('.navbar');
     if (navbar) {
-        navbar.style.top = "45px"; // Dorong navbar ke bawah setinggi banner
+        navbar.parentNode.insertBefore(banner, navbar.nextSibling);
     }
-    // Dorong konten body juga
-    document.body.style.marginTop = "45px";
 
+    // 4. Update konten
     updateStatus();
     setInterval(updateStatus, 1000);
 }
@@ -62,19 +56,21 @@ async function updateStatus() {
     const selisih = target - sekarang;
 
     if (selisih > 0) {
+        // --- MODE HITUNG MUNDUR ---
         const d = Math.floor(selisih / (1000 * 60 * 60 * 24));
         const h = Math.floor((selisih % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const m = Math.floor((selisih % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((selisih % (1000 * 60)) / 1000);
-        textEl.innerHTML = `🌙 Menuju Ramadan: ${d} Hari ${h}j ${m}m ${s}s lagi`;
+        textEl.innerHTML = `Menuju Ramadan 1447H: ${d} Hari, ${h}j ${m}m ${s}s lagi`;
     } else {
+        // --- MODE JADWAL SHOLAT ---
         let jadwal = sessionStorage.getItem('jadwal_sholat');
         if (!jadwal) {
             fetchJadwal();
-            textEl.innerHTML = `✨ Selamat Menunaikan Ibadah Puasa`;
+            textEl.innerHTML = `Selamat Berpuasa ✨`;
         } else {
             const j = JSON.parse(jadwal);
-            textEl.innerHTML = `🌙 Imsak: ${j.Imsak} | Maghrib: ${j.Maghrib} | Isya: ${j.Isha}`;
+            textEl.innerHTML = `🌙 Imsak: ${j.Imsak} | Maghrib (Buka): ${j.Maghrib} | Isya: ${j.Isha}`;
         }
     }
 }
@@ -84,10 +80,10 @@ async function fetchJadwal() {
         const response = await fetch(`https://api.aladhan.com/v1/timingsByCity?city=${CONFIG_RAMADAN.lokasi}&country=${CONFIG_RAMADAN.negara}&method=2`);
         const result = await response.json();
         if(result.data) sessionStorage.setItem('jadwal_sholat', JSON.stringify(result.data.timings));
-    } catch (err) { console.error("API Error"); }
+    } catch (err) { console.error("Gagal ambil jadwal"); }
 }
 
-// Jalankan langsung tanpa menunggu DOMContentLoaded jika perlu
+// Jalankan
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initRamadanFeature);
 } else {

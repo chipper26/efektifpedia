@@ -94,62 +94,71 @@
     
     <script>
       let isSpeaking = false;
+      let sentences = [];
+      let currentSentenceIndex = 0;
       const synth = window.speechSynthesis;
-      let utterance = null;
 
       function setupAudioReader(text) {
           const btn = document.getElementById('btn-speak');
           const status = document.getElementById('audio-status');
           
-          const cleanText = text.replace(/<[^>]*>?/gm, '')
-                                .replace(/[#*`_]/g, '')
-                                .replace(/\s+/g, ' ')
-                                .trim();
+          // 1. Bersihkan teks dan pecah jadi kalimat-kalimat pendek
+          const cleanText = text.replace(/<[^>]*>?/gm, '').replace(/[#*`_]/g, '').trim();
+          // Regex ini memecah berdasarkan titik, tanda tanya, atau seru
+          sentences = cleanText.match(/[^\.!\?]+[\.!\?]+/g) || [cleanText];
 
           btn.onclick = () => {
-              // Jika sedang berbicara atau sistem sedang sibuk, batalkan
-              if (synth.speaking || isSpeaking) {
-                  synth.cancel();
-                  resetBtn();
+              if (isSpeaking) {
+                  stopAudio();
+                  return;
+              }
+              startAudio();
+          };
+
+          function startAudio() {
+              synth.cancel(); // Pastikan tidak ada antrean sisa
+              isSpeaking = true;
+              currentSentenceIndex = 0;
+              btn.innerHTML = '<i class="bi bi-pause-circle-fill me-2"></i>Berhenti';
+              btn.classList.replace('btn-primary', 'btn-danger');
+              status.innerText = "Sedang membacakan...";
+              speakSentence();
+          }
+
+          function speakSentence() {
+              if (!isSpeaking || currentSentenceIndex >= sentences.length) {
+                  stopAudio();
+                  if (currentSentenceIndex >= sentences.length) status.innerText = "Selesai membacakan";
                   return;
               }
 
-              if (cleanText) {
-                  // KHUSUS MOBILE: Objek harus dibuat di dalam scope klik
-                  utterance = new SpeechSynthesisUtterance(cleanText);
-                  utterance.lang = 'id-ID';
-                  utterance.rate = 1.0;
-                  
-                  const voices = synth.getVoices();
-                  const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
-                  if (idVoice) utterance.voice = idVoice;
+              const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex].trim());
+              utterance.lang = 'id-ID';
+              utterance.rate = 1.0;
 
-                  utterance.onstart = () => {
-                      btn.innerHTML = '<i class="bi bi-pause-circle-fill me-2"></i>Berhenti';
-                      btn.classList.replace('btn-primary', 'btn-danger');
-                      status.innerText = "Sedang membacakan...";
-                      isSpeaking = true;
-                  };
+              const voices = synth.getVoices();
+              const idVoice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID'));
+              if (idVoice) utterance.voice = idVoice;
 
-                  utterance.onend = () => resetBtn();
-                  utterance.onerror = () => resetBtn();
+              utterance.onend = () => {
+                  currentSentenceIndex++;
+                  speakSentence(); // Lanjut ke kalimat berikutnya
+              };
 
-                  // Eksekusi bicara
-                  synth.speak(utterance);
+              utterance.onerror = () => stopAudio();
 
-                  // Trick HP: Paksa jalan jika antrean macet
-                  if (synth.paused) {
-                      synth.resume();
-                  }
-              }
-          };
+              synth.speak(utterance);
+              
+              // Force resume khusus untuk Chrome Mobile yang sering 'pause' sendiri
+              if (synth.paused) synth.resume();
+          }
 
-          function resetBtn() {
+          function stopAudio() {
+              isSpeaking = false;
               synth.cancel();
               btn.innerHTML = '<i class="bi bi-play-circle-fill me-2"></i>Dengarkan';
               if(btn.classList.contains('btn-danger')) btn.classList.replace('btn-danger', 'btn-primary');
-              status.innerText = "Pembacaan berhenti/selesai";
-              isSpeaking = false;
+              status.innerText = "Tersedia versi audio";
           }
       }
 
@@ -201,6 +210,7 @@
           document.getElementById('article-header').style.display = 'block';
           document.title = title + " - Efektifpedia";
 
+          // Inisialisasi audio setelah konten siap
           setupAudioReader(markdown);
           
         } catch (e) {
@@ -209,15 +219,10 @@
         }
       }
 
-      // Pre-load voices untuk mobile
-      window.addEventListener('load', () => {
-          if ('speechSynthesis' in window) {
-              synth.getVoices();
-              if (synth.onvoiceschanged !== undefined) {
-                  synth.onvoiceschanged = () => synth.getVoices();
-              }
-          }
-      });
+      // Pre-load voices (Sangat penting untuk mobile)
+      if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = () => synth.getVoices();
+      }
 
       loadPost();
     </script>

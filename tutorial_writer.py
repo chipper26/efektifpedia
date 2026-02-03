@@ -4,16 +4,16 @@ import json
 import random
 from datetime import datetime
 
-# --- KONFIGURASI AMAN ---
-# Menggunakan Secret baru khusus Tutorial agar tidak bentrok
-API_KEY = os.getenv("OPENROUTER_API_KEY_TUTORIAL") 
+# --- KONFIGURASI AMAN (SINKRON DENGAN YML) ---
+# Mengambil 'API_AI_KEY' dari env yang diset di file .yml
+API_KEY = os.getenv("API_AI_KEY") 
 PEXELS_KEY = os.getenv("PEXELS_API_KEY")
 URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "google/gemini-2.0-flash-001"
 
 FOLDER_TUJUAN = "blog" 
 
-# --- DAFTAR PENULIS TETAP (Sesuai Permintaan) ---
+# --- DAFTAR PENULIS TETAP ---
 DAFTAR_PENULIS = [
     "Nadira Kusuma", "Budi Santoso", "Citra Anggraini",
     "Andi Wijaya", "Raka Santosa", "Aditya Mahendra"
@@ -34,7 +34,7 @@ DAFTAR_BIDANG = [
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 BIDANG_HARI_INI = random.choice(DAFTAR_BIDANG)
 
-# --- PROMPT DENGAN INSTRUKSI VISUAL KHUSUS ---
+# --- PROMPT ---
 PROMPT = f"""
 Tugas kamu adalah menjadi pakar teknologi di Efektifpedia.
 HARI INI FOKUS PADA BIDANG: {BIDANG_HARI_INI}.
@@ -59,7 +59,6 @@ Tulis saja SATU KATA tersebut di baris paling terakhir tanpa tanda baca.
 """
 
 def get_pexels_thumbnail(query):
-    """Fungsi mengambil URL gambar yang relevan dari Pexels"""
     fallback_img = "https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&w=800"
     if not PEXELS_KEY:
         return fallback_img
@@ -75,13 +74,14 @@ def get_pexels_thumbnail(query):
             if data['photos']:
                 return random.choice(data['photos'])['src']['landscape']
     except Exception as e:
-        print(f"⚠️ Gagal mengambil gambar Pexels: {e}")
+        print(f"⚠️ Gagal mengambil gambar: {e}")
     
     return fallback_img
 
 def tulis_artikel():
+    # Pengecekan apakah API_KEY berhasil ditarik dari env
     if not API_KEY:
-        print("❌ Error: OPENROUTER_API_KEY_TUTORIAL tidak ditemukan!")
+        print("❌ Error: API_AI_KEY tidak ditemukan di environment!")
         return
 
     headers = {
@@ -97,7 +97,7 @@ def tulis_artikel():
         "temperature": 0.7
     }
 
-    print(f"🛠️ TutorialBot sedang menyusun materi oleh {PENULIS_HARI_INI}...")
+    print(f"🛠️ Bot sedang memproses tutorial oleh {PENULIS_HARI_INI}...")
     
     try:
         response = requests.post(URL, headers=headers, data=json.dumps(data))
@@ -110,7 +110,6 @@ def tulis_artikel():
             
             img_url = get_pexels_thumbnail(keyword)
 
-            # Injeksi thumbnail ke frontmatter
             konten_final = artikel_body.replace(
                 f"author: \"{PENULIS_HARI_INI}\"", 
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
@@ -119,16 +118,14 @@ def tulis_artikel():
             if not os.path.exists(FOLDER_TUJUAN):
                 os.makedirs(FOLDER_TUJUAN)
             
-            # Penamaan file dengan awalan tutorial agar rapi
             filename = os.path.join(FOLDER_TUJUAN, f"tutorial-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
             
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Topik: {BIDANG_HARI_INI}")
-            print(f"🖼️ Gambar Relevan: {keyword}")
+            print(f"✅ BERHASIL! File: {filename}")
         else:
-            print(f"❌ API Error. Status: {response.status_code}")
+            print(f"❌ API Error: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"⚠️ Kendala teknis: {e}")
 

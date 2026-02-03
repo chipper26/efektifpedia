@@ -24,9 +24,9 @@ jobs:
 
       - name: Generate Tutorial Content
         env:
-          # Pastikan kamu membuat secret baru dengan nama ini di GitHub Settings
-          API_AI_KEY: ${{secrets.OPENROUTER_API_KEY_TUTORIAL}}
-          PEXELS_API_KEY: ${{secrets.PEXELS_API_KEY}}
+          # Label yang akan dibaca oleh Python
+          API_AI_KEY: ${{ secrets.OPENROUTER_API_KEY_TUTORIAL }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: python tutorial_writer.py
 
       - name: Commit and Push

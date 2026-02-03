@@ -1,10 +1,10 @@
-name: Efektifpedia Tutorial Bot
+name: Efektifpedia Innovation Bot
 
 on:
   schedule:
+    # Hanya jalan sekali sehari:
     # 22:15 UTC = 05:15 WIB (Postingan Subuh)
-    # 10:15 UTC = 17:15 WIB (Postingan Sore)
-    - cron: '15 22,10 * * *'
+    - cron: '15 22 * * *'
   workflow_dispatch: 
 
 jobs:
@@ -22,17 +22,17 @@ jobs:
       - name: Install Requests
         run: pip install requests
 
-      - name: Generate Tutorial Content
+      - name: Generate Innovation Content
         env:
-          # Label yang akan dibaca oleh Python
+          # Pastikan variabel ini sama dengan yang dipanggil di Python os.getenv
           API_AI_KEY: ${{ secrets.OPENROUTER_API_KEY_TUTORIAL }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: python tutorial_writer.py
 
       - name: Commit and Push
         run: |
-          git config --local user.email "bot-tutorial@efektifpedia.com"
-          git config --local user.name "Budi Tutorial"
+          git config --local user.email "bot-innovation@efektifpedia.com"
+          git config --local user.name "Aditya Innovation"
           git add .
-          git commit -m "Tutorial: Auto Update Guide - $(date)" || exit 0
+          git commit -m "Innovation: News Update - $(date)" || exit 0
           git push

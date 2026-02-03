@@ -13,30 +13,25 @@
       .content-wrapper { flex: 1 0 auto; }
       footer { flex-shrink: 0; }
       
-      #post-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 20px 0; }
-      #post-content { line-height: 2; font-size: 1.15rem; color: #212529; }
-      
-      .entry-category { color: #0d6efd; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
-      .entry-title { font-size: 2.5rem; font-weight: 800; margin-top: 10px; color: #000; line-height: 1.2; }
-      .entry-meta { border-top: 1px solid #dee2e6; border-bottom: 1px solid #dee2e6; padding: 10px 0; margin: 20px 0; }
-      
-      .audio-box { background: #fff; border-radius: 12px; padding: 15px; border: 1px solid #dee2e6; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-      #btn-speak { transition: 0.3s; font-weight: bold; }
+      #post-content { line-height: 2; font-size: 1.2rem; color: #212529; }
       
       /* HIGHLIGHT PER KATA - MERAH */
-      .word-active { 
-        background-color: rgba(255, 0, 0, 0.2); 
-        color: #d63384; 
-        border-bottom: 2px solid red;
+      .word-highlight { 
+        background-color: rgba(255, 0, 0, 0.2); /* Merah transparan */
+        border-bottom: 2px solid #ff0000;
         border-radius: 2px;
-        transition: background 0.1s ease;
+        transition: all 0.1s ease;
       }
 
-      .featured-image { width: 100%; max-height: 450px; object-fit: cover; border-radius: 8px; margin-bottom: 2rem; }
-
-      @media (max-width: 768px) {
-        .entry-title { font-size: 1.8rem; }
+      .audio-box { 
+        background: #fff; 
+        border-radius: 12px; 
+        padding: 15px; 
+        border: 1px solid #dee2e6;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
       }
+
+      .featured-image { width: 100%; max-height: 400px; object-fit: cover; border-radius: 8px; margin-bottom: 2rem; }
     </style>
   </head>
   <body>
@@ -49,41 +44,26 @@
     <div class="content-wrapper container mt-4 mb-5">
       <div class="row justify-content-center">
         <div class="col-md-9 bg-white p-4 p-md-5 shadow-sm rounded">
-          <div id="post-loading" class="text-center">
-            <div class="spinner-border text-primary"></div>
-            <p>Memuat artikel...</p>
-          </div>
           
           <div id="article-header" style="display: none;">
-            <div id="article-category" class="entry-category"></div>
-            <h1 id="article-title" class="entry-title"></h1>
+            <div id="article-category" class="text-primary fw-bold text-uppercase small mb-2"></div>
+            <h1 id="article-title" class="fw-bold mb-3"></h1>
             
-            <div class="entry-meta">
-              <span id="author-name" class="fw-bold"></span> <span class="text-muted">| Penulis</span><br>
-              <span id="publish-date" class="small text-muted"></span>
-            </div>
-
             <div class="audio-box mb-4 d-flex align-items-center justify-content-between">
                 <button id="btn-speak" class="btn btn-primary rounded-pill px-4">
                     <i class="bi bi-play-circle-fill me-2"></i>Dengarkan
                 </button>
-                <span id="audio-status" class="small text-muted italic">Fitur audio aktif</span>
+                <span id="audio-status" class="small text-muted">Tersedia audio</span>
             </div>
 
-            <img id="article-thumbnail" class="featured-image" style="display: none;" alt="Thumbnail">
+            <img id="article-thumbnail" class="featured-image" style="display: none;">
           </div>
           
           <article id="post-content"></article>
           
-          <hr class="mt-5">
-          <a href="blog.html" class="btn btn-outline-primary">&larr; Kembali ke Blog</a>
         </div>
       </div>
     </div>
-
-    <footer class="bg-primary text-white text-center py-4 mt-auto">
-        <p class="m-0 small">created by 🔶 irawan</p>
-    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
@@ -92,44 +72,46 @@
       const synth = window.speechSynthesis;
       let wordsElements = [];
 
-      // Fungsi membungkus kata demi kata
-      function prepareWords() {
-          const contentArea = document.getElementById('post-content');
-          const walker = document.createTreeWalker(contentArea, NodeFilter.SHOW_TEXT, null, false);
+      // FUNGSI MEMBUNGKUS SETIAP KATA
+      function prepareText() {
+          const content = document.getElementById('post-content');
+          const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null, false);
           let node;
-          const textNodes = [];
+          let textNodes = [];
 
           while (node = walker.nextNode()) textNodes.push(node);
 
-          textNodes.forEach(textNode => {
-              const words = textNode.nodeValue.split(/(\s+)/);
+          textNodes.forEach(node => {
+              const text = node.nodeValue;
+              const words = text.split(/(\s+)/);
               const fragment = document.createDocumentFragment();
 
               words.forEach(word => {
                   if (word.trim().length > 0) {
                       const span = document.createElement('span');
-                      span.className = 'article-word';
+                      span.className = 'reading-word';
                       span.innerText = word;
                       fragment.appendChild(span);
                   } else {
                       fragment.appendChild(document.createTextNode(word));
                   }
               });
-              textNode.parentNode.replaceChild(fragment, textNode);
+              node.parentNode.replaceChild(fragment, node);
           });
-          wordsElements = Array.from(document.querySelectorAll('.article-word'));
+          wordsElements = Array.from(document.querySelectorAll('.reading-word'));
       }
 
       function setupAudio() {
           const btn = document.getElementById('btn-speak');
           const status = document.getElementById('audio-status');
-          
-          prepareWords();
+          prepareText();
+
           const fullText = wordsElements.map(el => el.innerText).join(' ');
 
           btn.onclick = () => {
               if (synth.speaking) {
                   synth.cancel();
+                  isSpeaking = false;
                   resetUI();
                   return;
               }
@@ -138,27 +120,28 @@
               utterance.lang = 'id-ID';
               utterance.rate = 1.0;
 
-              // EVENT UTAMA: Deteksi kata saat bersuara
+              // EVENT UTAMA: HIGHLIGHT PER KATA
               utterance.onboundary = (event) => {
                   if (event.name === 'word') {
                       const charIndex = event.charIndex;
-                      let currentPos = 0;
-
+                      
+                      // Cari elemen kata yang sesuai dengan charIndex
+                      let totalChars = 0;
                       for (let i = 0; i < wordsElements.length; i++) {
-                          const wordLen = wordsElements[i].innerText.length;
-                          if (currentPos >= charIndex) {
-                              // Hilangkan highlight lama
-                              document.querySelectorAll('.word-active').forEach(el => el.classList.remove('word-active'));
+                          const wordText = wordsElements[i].innerText;
+                          if (totalChars >= charIndex) {
+                              // Hapus highlight sebelumnya
+                              document.querySelectorAll('.word-highlight').forEach(el => el.classList.remove('word-highlight'));
                               
                               // Tambah highlight baru (MERAH)
                               const target = wordsElements[i];
-                              target.classList.add('word-active');
+                              target.classList.add('word-highlight');
                               
-                              // Auto Scroll
+                              // AUTO SCROLL
                               target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                               break;
                           }
-                          currentPos += wordLen + 1;
+                          totalChars += wordText.length + 1; // +1 spasi
                       }
                   }
               };
@@ -167,54 +150,43 @@
                   isSpeaking = true;
                   btn.innerHTML = '<i class="bi bi-stop-circle-fill me-2"></i>Berhenti';
                   btn.classList.replace('btn-primary', 'btn-danger');
-                  status.innerText = "Membacakan artikel...";
+                  status.innerText = "Membaca...";
               };
 
               utterance.onend = () => resetUI();
-              utterance.onerror = () => resetUI();
 
-              // Kirim naskah utuh agar layar mati tidak memutus suara
+              // Trick HP: Satu Utterance Panjang agar Layar Mati Tetap Jalan
               synth.speak(utterance);
           };
 
           function resetUI() {
-              isSpeaking = false;
-              synth.cancel();
               btn.innerHTML = '<i class="bi bi-play-circle-fill me-2"></i>Dengarkan';
-              if(btn.classList.contains('btn-danger')) btn.classList.replace('btn-danger', 'btn-primary');
-              status.innerText = "Fitur audio aktif";
-              document.querySelectorAll('.word-active').forEach(el => el.classList.remove('word-active'));
+              btn.classList.replace('btn-danger', 'btn-primary');
+              status.innerText = "Tersedia audio";
+              document.querySelectorAll('.word-highlight').forEach(el => el.classList.remove('word-highlight'));
           }
       }
 
       async function loadPost() {
         const params = new URLSearchParams(window.location.search);
         const fileName = params.get('file');
-        const contentArea = document.getElementById('post-content');
-        const loading = document.getElementById('post-loading');
-
-        if (!fileName) return;
-
         try {
-          const response = await fetch(`https://raw.githubusercontent.com/chipper26/efektifpedia/main/blog/${fileName}`);
-          let markdown = await response.text();
+          const res = await fetch(`https://raw.githubusercontent.com/chipper26/efektifpedia/main/blog/${fileName}`);
+          let md = await res.text();
           
           // Parsing Frontmatter sederhana
-          const parts = markdown.split('---');
-          const fm = parts[1];
-          const content = parts.slice(2).join('---').trim();
-
-          document.getElementById('article-title').innerText = fm.match(/title:\s*(.*)/)?.[1] || "";
-          document.getElementById('author-name').innerText = fm.match(/author:\s*(.*)/)?.[1] || "Tim";
+          const content = md.split('---')[2] || md;
+          document.getElementById('post-content').innerHTML = marked.parse(content);
           
-          contentArea.innerHTML = marked.parse(content);
-          loading.style.display = 'none';
+          // Header info
+          const fm = md.split('---')[1];
+          document.getElementById('article-title').innerText = fm.match(/title:\s*(.*)/)?.[1] || "Artikel";
           document.getElementById('article-header').style.display = 'block';
+          document.getElementById('post-loading').style.display = 'none';
 
+          // Inisialisasi Audio
           setTimeout(setupAudio, 500);
-        } catch (e) {
-          loading.innerText = "Gagal memuat artikel.";
-        }
+        } catch (e) { console.error(e); }
       }
 
       loadPost();

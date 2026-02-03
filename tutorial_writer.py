@@ -4,8 +4,7 @@ import json
 import random
 from datetime import datetime
 
-# --- KONFIGURASI AMAN (SINKRON DENGAN YML + PENGAMAN) ---
-# .strip() berfungsi menghapus spasi atau enter tak terlihat yang bikin error header
+# --- KONFIGURASI AMAN ---
 API_KEY = str(os.getenv("API_AI_KEY", "")).strip() 
 PEXELS_KEY = str(os.getenv("PEXELS_API_KEY", "")).strip()
 URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -34,14 +33,14 @@ DAFTAR_BIDANG = [
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 BIDANG_HARI_INI = random.choice(DAFTAR_BIDANG)
 
-# --- PROMPT ---
+# --- PROMPT (DIPERKETAT PADA KATEGORI) ---
 PROMPT = f"""
 Tugas kamu adalah menjadi pakar teknologi di Efektifpedia.
 HARI INI FOKUS PADA BIDANG: {BIDANG_HARI_INI}.
 
 INSTRUKSI ARTIKEL:
 1. Pilih satu sub-topik spesifik dari bidang tersebut.
-2. Tulis artikel mendalam minimal 600 kata dalam Bahasa Indonesia.
+2. Tulis artikel edukasi/tutorial mendalam minimal 600 kata dalam Bahasa Indonesia.
 3. Gunakan format Markdown murni.
 
 Wajib sertakan Frontmatter di bagian paling atas:
@@ -52,8 +51,10 @@ category: "Review & Tutorial"
 author: "{PENULIS_HARI_INI}"
 ---
 
-PENTING UNTUK THUMBNAIL:
-Tuliskan tepat satu kata kunci (keyword) bahasa Inggris yang paling mewakili visual artikel ini di baris paling terakhir tanpa tanda baca.
+PENTING:
+- Kategori HARUS tertulis tepat "Review & Tutorial" (gunakan tanda kutip).
+- Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci (keyword) bahasa Inggris untuk visual (Contoh: technology, laptop, coding).
+- Tulis saja SATU KATA tersebut di baris paling terakhir tanpa tanda baca.
 """
 
 def get_pexels_thumbnail(query):
@@ -76,15 +77,14 @@ def get_pexels_thumbnail(query):
     return fallback_img
 
 def tulis_artikel():
-    # Validasi Key sebelum kirim request
-    if not API_KEY or API_KEY == "":
-        print("❌ Error: API_AI_KEY tidak ditemukan atau kosong!")
+    if not API_KEY:
+        print("❌ Error: API_AI_KEY tidak ditemukan!")
         return
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://efektifpedia.com", # Syarat OpenRouter
+        "HTTP-Referer": "https://efektifpedia.com",
         "X-Title": "Efektifpedia Bot"
     }
     
@@ -94,22 +94,23 @@ def tulis_artikel():
         "temperature": 0.7
     }
 
-    print(f"🛠️ Sedang memproses artikel tutorial oleh {PENULIS_HARI_INI}...")
+    print(f"🛠️ Sedang menyusun 'Review & Tutorial' oleh {PENULIS_HARI_INI}...")
     
     try:
-        # Menggunakan json=payload secara otomatis mengurus header Content-Type
         response = requests.post(URL, headers=headers, json=payload, timeout=60)
         
         if response.status_code == 200:
             res_data = response.json()
             raw_content = res_data['choices'][0]['message']['content']
             
+            # Memisahkan body dan keyword
             lines = [l for l in raw_content.strip().split('\n') if l.strip()]
             keyword = lines[-1].strip()
             artikel_body = "\n".join(lines[:-1]) 
             
             img_url = get_pexels_thumbnail(keyword)
 
+            # Injeksi thumbnail dan memastikan kategori rapi
             konten_final = artikel_body.replace(
                 f"author: \"{PENULIS_HARI_INI}\"", 
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
@@ -123,10 +124,10 @@ def tulis_artikel():
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Topik: {BIDANG_HARI_INI}")
+            print(f"✅ BERHASIL! Kategori: Review & Tutorial")
             print(f"🖼️ Gambar: {img_url}")
         else:
-            print(f"❌ API Error {response.status_code}: {response.text}")
+            print(f"❌ API Error: {response.status_code}")
             
     except Exception as e:
         print(f"⚠️ Kendala teknis: {str(e)}")

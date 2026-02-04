@@ -3,10 +3,11 @@ import json
 import os
 import random
 from datetime import datetime
+import re
 
 # --- KONFIGURASI AMAN ---
-API_KEY = os.getenv("OPENROUTER_API_KEY") 
-PEXELS_KEY = os.getenv("PEXELS_API_KEY") 
+API_KEY = str(os.getenv("OPENROUTER_API_KEY", "")).strip() 
+PEXELS_KEY = str(os.getenv("PEXELS_API_KEY", "")).strip() 
 URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "google/gemini-2.0-flash-001"
 
@@ -16,7 +17,7 @@ FOLDER_TUJUAN = "blog"
 # --- DAFTAR PENULIS (PERSONA) ---
 DAFTAR_PENULIS = ["Nadira Kusuma", "Budi Santoso", "Citra Anggraini", "Andi Wijaya", "Raka Santosa", "Aditya Mahendra"]
 
-# --- DAFTAR SUDUT PANDANG (Agar pembahasan berita lebih bervariasi) ---
+# --- DAFTAR SUDUT PANDANG ---
 SUDUT_PANDANG = [
     "fokus pada inovasi perangkat keras (hardware) terbaru",
     "fokus pada terobosan perangkat lunak (software) dan aplikasi",
@@ -30,15 +31,18 @@ SUDUT_PANDANG = [
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 GAYA_BAHASA_HARI_INI = random.choice(SUDUT_PANDANG)
 
-# --- PROMPT BEBAS TAPI BERVARIAI ---
+# --- PROMPT DENGAN ATURAN H4 & SPACING ---
 PROMPT = f"""
 Cari berita teknologi yang paling viral, hangat, dan banyak dibicarakan dalam seminggu terakhir hingga hari ini ({datetime.now().strftime('%d %B %Y')}).
 Tulis artikel blog mendalam minimal 600 kata dalam Bahasa Indonesia.
 
-Gunakan gaya bahasa profesional Sistem Informasi yang informatif, namun kali ini berikan ulasan yang {GAYA_BAHASA_HARI_INI}.
+Gunakan gaya bahasa profesional Sistem Informasi yang informatif, namun ulas secara {GAYA_BAHASA_HARI_INI}.
 Pastikan isi artikel benar-benar relevan dengan tren teknologi global saat ini.
 
-PENTING: Gunakan format Markdown murni tanpa tambahan teks penjelasan di luar markdown.
+ATURAN FORMAT VISUAL (PENTING):
+1. Gunakan format '#### ' (Heading 4) untuk setiap sub-judul atau poin pembahasan baru.
+2. WAJIB memberikan SATU BARIS KOSONG sebelum dan sesudah setiap '#### ' agar tidak menempel dengan paragraf.
+3. Gunakan format Markdown murni tanpa tambahan teks penjelasan di luar artikel.
 
 Wajib sertakan Frontmatter di bagian paling atas:
 ---
@@ -48,29 +52,31 @@ category: "Tech News"
 author: "{PENULIS_HARI_INI}"
 ---
 
-Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris untuk mencari gambar thumbnail yang relevan di Pexels (contoh: 'future', 'robot', 'code', 'smartphone'). Tulis saja katanya di baris baru tanpa tanda baca.
+PENTING UNTUK THUMBNAIL:
+Di baris paling terakhir sendiri setelah artikel selesai, tuliskan tepat satu kata kunci bahasa Inggris (keyword) untuk mencari gambar di Pexels (contoh: 'ai', 'smartphone', 'cybersecurity'). Tulis saja SATU KATA tersebut tanpa tanda baca.
 """
 
 def get_pexels_url(query):
     """Fungsi hanya mengambil URL LINK gambar resmi dari Pexels"""
+    fallback_img = "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
     if not PEXELS_KEY:
-        # Fallback gambar default jika API Key tidak ada
-        return "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
+        return fallback_img
     
+    # Bersihkan query
+    clean_query = query.strip().lower().replace(".", "").replace('"', "").split()[-1]
     headers = {"Authorization": PEXELS_KEY}
-    pexels_url = f"https://api.pexels.com/v1/search?query={query}&per_page=1&orientation=landscape"
+    pexels_url = f"https://api.pexels.com/v1/search?query={clean_query}&per_page=1&orientation=landscape"
     
     try:
-        res = requests.get(pexels_url, headers=headers)
+        res = requests.get(pexels_url, headers=headers, timeout=15)
         if res.status_code == 200:
             data = res.json()
             if data['photos']:
-                # Kita ambil link gambar ukuran landscape saja
                 return data['photos'][0]['src']['landscape']
     except Exception as e:
         print(f"⚠️ Gagal mengambil link Pexels: {e}")
     
-    return "https://images.pexels.com/photos/546819/pexels-photo-546819.jpeg?auto=compress&w=800"
+    return fallback_img
 
 def tulis_artikel():
     if not API_KEY:
@@ -81,46 +87,56 @@ def tulis_artikel():
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://efektifpedia.com",
-        "X-Title": "Efektifpedia Bot"
+        "X-Title": "Efektifpedia News Bot"
     }
     
     data = {
         "model": MODEL,
         "messages": [{"role": "user", "content": PROMPT}],
-        "temperature": 0.8  # Kreativitas tinggi agar topik tidak membosankan
+        "temperature": 0.8
     }
 
     print(f"🤖 Meriset tren viral hari ini dengan sudut pandang: {GAYA_BAHASA_HARI_INI}...")
     
     try:
-        response = requests.post(URL, headers=headers, data=json.dumps(data))
+        response = requests.post(URL, headers=headers, data=json.dumps(data), timeout=60)
         if response.status_code == 200:
             raw_content = response.json()['choices'][0]['message']['content']
             
             # --- LOGIKA EKSTRAKSI ---
             lines = [l for l in raw_content.strip().split('\n') if l.strip()]
-            keyword = lines[-1].strip().lower().split()[-1] # Keyword untuk Pexels
+            keyword = lines[-1].strip().lower().split()[-1]
             artikel_body = "\n".join(lines[:-1]) 
+
+            # --- LOGIKA AUTO-SEPARATOR (SINKRONISASI CMS & BLOG) ---
+            # Pastikan H4 memiliki jarak kosong yang cukup
+            artikel_body = re.sub(r'\n*(#### .*)\n*', r'\n\n\1\n\n', artikel_body)
+            # Bersihkan jarak yang terlalu lebar
+            artikel_body = re.sub(r'\n{3,}', r'\n\n', artikel_body)
             
-            # AMBIL URL GAMBAR (Bukan download file)
+            # AMBIL URL GAMBAR
             img_url = get_pexels_url(keyword)
 
-            # Masukkan link URL ke dalam Frontmatter
+            # Injeksi thumbnail ke Frontmatter
             konten_final = artikel_body.replace(
                 f"author: \"{PENULIS_HARI_INI}\"", 
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
             )
             
+            # Pastikan Kategori Tech News (Hapus kutip liar jika ada)
+            konten_final = re.sub(r'category:.*', 'category: "Tech News"', konten_final)
+            
             if not os.path.exists(FOLDER_TUJUAN):
                 os.makedirs(FOLDER_TUJUAN)
             
-            # Nama file unik berdasarkan waktu
-            filename = os.path.join(FOLDER_TUJUAN, f"ai-news-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
+            # Nama file unik
+            filename = os.path.join(FOLDER_TUJUAN, f"news-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
             
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Link Thumbnail: {img_url}")
+            print(f"✅ BERHASIL! Berita hari ini: {keyword}")
+            print(f"🔗 Thumbnail: {img_url}")
         else:
             print(f"❌ Gagal di OpenRouter. Status: {response.status_code}")
     except Exception as e:

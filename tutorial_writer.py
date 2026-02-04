@@ -6,7 +6,6 @@ from datetime import datetime
 import re
 
 # --- KONFIGURASI AMAN ---
-# Pastikan nama Secret di GitHub sesuai (API_AI_KEY dan PEXELS_API_KEY)
 API_KEY = str(os.getenv("API_AI_KEY", "")).strip() 
 PEXELS_KEY = str(os.getenv("PEXELS_API_KEY", "")).strip()
 URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -30,7 +29,7 @@ DAFTAR_BIDANG = [
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 BIDANG_HARI_INI = random.choice(DAFTAR_BIDANG)
 
-# --- PROMPT KATEGORI INNOVATION ---
+# --- PROMPT KATEGORI INNOVATION (DENGAN ATURAN H4) ---
 PROMPT = f"""
 Cari tren inovasi teknologi terbaru mengenai {BIDANG_HARI_INI}.
 Tulis artikel blog mendalam minimal 600 kata dalam Bahasa Indonesia.
@@ -44,10 +43,13 @@ category: "Innovation"
 author: "{PENULIS_HARI_INI}"
 ---
 
+ATURAN FORMAT VISUAL (WAJIB):
+1. Gunakan format '#### ' (Heading 4) untuk setiap sub-judul atau poin pembahasan baru.
+2. Pastikan ada SATU BARIS KOSONG sebelum dan sesudah setiap '#### ' agar tidak menempel dengan paragraf.
+3. Gunakan Markdown murni tanpa tambahan teks penjelasan di luar artikel.
+
 PENTING:
-Gunakan format Markdown murni. 
-Di baris paling terakhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris (hanya satu kata) untuk gambar thumbnail (contoh: 'future', 'innovation', 'robot', 'tech'). 
-Tulis saja katanya tanpa tanda baca.
+Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci singkat dalam bahasa Inggris (hanya satu kata) untuk mencari gambar thumbnail (contoh: 'future', 'robot', 'galaxy'). Tulis saja katanya di baris baru tanpa tanda baca.
 """
 
 def get_pexels_url(query):
@@ -57,7 +59,6 @@ def get_pexels_url(query):
         return fallback_img
     
     headers = {"Authorization": PEXELS_KEY}
-    # Per page 1 untuk efisiensi
     pexels_url = f"https://api.pexels.com/v1/search?query={query}&per_page=1&orientation=landscape"
     
     try:
@@ -98,9 +99,18 @@ def tulis_artikel():
             
             # --- LOGIKA EKSTRAKSI ---
             lines = [l for l in raw_content.strip().split('\n') if l.strip()]
-            # Mengambil tepat satu kata kunci di baris terakhir
+            # Keyword untuk Pexels di baris terakhir
             keyword = lines[-1].strip().lower().split()[-1] 
+            
+            # Gabungkan kembali artikel tanpa kata kunci terakhir
             artikel_body = "\n".join(lines[:-1]) 
+
+            # --- LOGIKA AUTO-SEPARATOR (SINKRONISASI CMS) ---
+            # Mencari baris yang dimulai dengan #### dan memastikan ada baris kosong di atas/bawahnya
+            # Ini untuk mencegah teks menumpuk di blog.html
+            artikel_body = re.sub(r'\n*(#### .*)\n*', r'\n\n\1\n\n', artikel_body)
+            # Membersihkan spasi berlebih hasil dari re.sub tadi
+            artikel_body = re.sub(r'\n{3,}', r'\n\n', artikel_body)
             
             # AMBIL URL GAMBAR
             img_url = get_pexels_url(keyword)
@@ -111,7 +121,7 @@ def tulis_artikel():
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
             )
             
-            # PAKSA KATEGORI: Innovation agar sinkron dengan blog.html
+            # PAKSA KATEGORI: Innovation
             konten_final = re.sub(r'category:.*', 'category: "Innovation"', konten_final)
             
             if not os.path.exists(FOLDER_TUJUAN):
@@ -123,7 +133,7 @@ def tulis_artikel():
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Kategori: Innovation")
+            print(f"✅ BERHASIL! Format H4 telah diterapkan.")
             print(f"🔗 Thumbnail: {img_url} (Keyword: {keyword})")
         else:
             print(f"❌ Gagal di OpenRouter. Status: {response.status_code}")

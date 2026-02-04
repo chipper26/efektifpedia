@@ -3,10 +3,12 @@ import requests
 import json
 import random
 from datetime import datetime
+import re
 
 # --- KONFIGURASI AMAN ---
-API_KEY = os.getenv("OPENROUTER_API_KEY_BACKUP") 
-PEXELS_KEY = os.getenv("PEXELS_API_KEY")
+# Menggunakan API_AI_KEY_BACKUP sesuai pola environment kamu
+API_KEY = str(os.getenv("OPENROUTER_API_KEY_BACKUP", "")).strip() 
+PEXELS_KEY = str(os.getenv("PEXELS_API_KEY", "")).strip()
 URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL = "google/gemini-2.0-flash-001"
 
@@ -33,7 +35,7 @@ DAFTAR_BIDANG = [
 PENULIS_HARI_INI = random.choice(DAFTAR_PENULIS)
 BIDANG_HARI_INI = random.choice(DAFTAR_BIDANG)
 
-# --- PROMPT DENGAN INSTRUKSI VISUAL KHUSUS ---
+# --- PROMPT DENGAN INSTRUKSI H4 & SPACING ---
 PROMPT = f"""
 Tugas kamu adalah menjadi pengajar teknologi di Efektifpedia.
 HARI INI FOKUS PADA BIDANG: {BIDANG_HARI_INI}.
@@ -42,7 +44,11 @@ INSTRUKSI ARTIKEL:
 1. Pilih satu sub-topik spesifik dari bidang tersebut yang penting untuk dipelajari pemula.
 2. Tulis artikel edukasi mendalam minimal 600 kata dalam Bahasa Indonesia.
 3. Gunakan gaya bahasa yang mudah dipahami, sertakan contoh kasus atau contoh kode jika relevan.
-4. Gunakan format Markdown murni.
+
+ATURAN FORMAT VISUAL (PENTING):
+- Gunakan format '#### ' (Heading 4) untuk setiap sub-judul atau poin pembahasan baru agar sinkron dengan CMS.
+- WAJIB memberikan SATU BARIS KOSONG sebelum dan sesudah setiap '#### ' agar tidak menempel dengan paragraf.
+- Gunakan format Markdown murni.
 
 Wajib sertakan Frontmatter di bagian paling atas:
 ---
@@ -53,8 +59,7 @@ author: "{PENULIS_HARI_INI}"
 ---
 
 PENTING UNTUK THUMBNAIL:
-Di bagian paling akhir setelah artikel selesai, tuliskan tepat satu kata kunci (keyword) bahasa Inggris yang paling mewakili visual artikel ini agar relevan. 
-Contoh: jika bahas database gunakan 'database', jika bahas keamanan gunakan 'cyber-security', jika bahas kode gunakan 'programming'.
+Di baris paling terakhir sendiri setelah artikel selesai, tuliskan tepat satu kata kunci bahasa Inggris (keyword) yang paling mewakili visual artikel. 
 Tulis saja SATU KATA tersebut di baris paling terakhir tanpa tanda baca.
 """
 
@@ -64,19 +69,18 @@ def get_pexels_thumbnail(query):
     if not PEXELS_KEY:
         return fallback_img
     
-    # Membersihkan query: ambil kata terakhir, hapus titik atau kutip
+    # Membersihkan query: ambil kata terakhir
     clean_query = query.strip().lower().replace(".", "").replace('"', "").split()[-1]
     
     headers = {"Authorization": PEXELS_KEY}
-    # Ambil 3 pilihan agar bisa di-random sedikit tapi tetap relevan
+    # Ambil 3 pilihan agar bisa di-random sedikit
     pexels_url = f"https://api.pexels.com/v1/search?query={clean_query}&per_page=3&orientation=landscape"
     
     try:
-        res = requests.get(pexels_url, headers=headers, timeout=10)
+        res = requests.get(pexels_url, headers=headers, timeout=15)
         if res.status_code == 200:
             data = res.json()
             if data['photos']:
-                # Pilih secara acak dari 3 hasil teratas agar tidak bosan tapi tetap nyambung
                 return random.choice(data['photos'])['src']['landscape']
     except Exception as e:
         print(f"⚠️ Gagal mengambil gambar Pexels: {e}")
@@ -98,40 +102,48 @@ def tulis_artikel():
     data = {
         "model": MODEL,
         "messages": [{"role": "user", "content": PROMPT}],
-        "temperature": 0.7 # Kreativitas menengah agar edukasi tidak kaku
+        "temperature": 0.7
     }
 
     print(f"📚 EduBot sedang menyusun materi tentang {BIDANG_HARI_INI}...")
     
     try:
-        response = requests.post(URL, headers=headers, data=json.dumps(data))
+        response = requests.post(URL, headers=headers, data=json.dumps(data), timeout=60)
         if response.status_code == 200:
             raw_content = response.json()['choices'][0]['message']['content']
             
             # Pisahkan body artikel dengan keyword terakhir
             lines = [l for l in raw_content.strip().split('\n') if l.strip()]
-            keyword = lines[-1].strip()
+            keyword = lines[-1].strip().lower().split()[-1]
             artikel_body = "\n".join(lines[:-1]) 
+
+            # --- LOGIKA AUTO-SEPARATOR (SINKRONISASI CMS) ---
+            # Memaksa baris kosong di sekitar H4 agar tampilan rapi
+            artikel_body = re.sub(r'\n*(#### .*)\n*', r'\n\n\1\n\n', artikel_body)
+            # Membersihkan tumpukan enter yang lebih dari dua
+            artikel_body = re.sub(r'\n{3,}', r'\n\n', artikel_body)
             
-            # Ambil hanya URL-nya saja (Hemat Storage GitHub!)
+            # Ambil URL Gambar
             img_url = get_pexels_thumbnail(keyword)
 
-            # Masukkan thumbnail URL ke dalam Frontmatter
+            # Injeksi thumbnail ke Frontmatter
             konten_final = artikel_body.replace(
                 f"author: \"{PENULIS_HARI_INI}\"", 
                 f"author: \"{PENULIS_HARI_INI}\"\nthumbnail: \"{img_url}\""
             )
             
+            # Pastikan kategori tetap Edukasi (Hapus kutip jika AI nulis sembarangan)
+            konten_final = re.sub(r'category:.*', 'category: "Edukasi"', konten_final)
+            
             if not os.path.exists(FOLDER_TUJUAN):
                 os.makedirs(FOLDER_TUJUAN)
             
-            # Penamaan file dengan awalan edu agar terorganisir
             filename = os.path.join(FOLDER_TUJUAN, f"edu-{datetime.now().strftime('%Y%m%d-%H%M')}.md")
             
             with open(filename, "w", encoding="utf-8") as f:
                 f.write(konten_final)
             
-            print(f"✅ BERHASIL! Materi: {BIDANG_HARI_INI}")
+            print(f"✅ BERHASIL! Format Edukasi H4 telah diterapkan.")
             print(f"🖼️ Relevansi Gambar: {keyword} -> {img_url}")
         else:
             print(f"❌ Gagal di OpenRouter. Status: {response.status_code}")

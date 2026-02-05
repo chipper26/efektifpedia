@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Checkout Repo Utama
         uses: actions/checkout@v3
+        with:
+          # Menonaktifkan kredensial bawaan agar tidak mengganggu otentikasi eksternal
+          persist-credentials: false
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -24,24 +27,33 @@ jobs:
 
       - name: Generate Innovation Content
         env:
-          # Pastikan variabel ini sama dengan yang dipanggil di Python tutorial_writer.py
+          # Menyesuaikan dengan variabel di script tutorial_writer.py
           API_AI_KEY: ${{ secrets.OPENROUTER_API_KEY_TUTORIAL }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: python tutorial_writer.py
 
       - name: Push to Storage Repo (Keyy26-git)
         env:
-          # Mengambil token akses dari Secrets repo chipper26
+          # Token akses akun Keyy26-git yang disimpan di Secrets chipper26
           REMOTE_TOKEN: ${{ secrets.EXTERNAL_TOKEN }}
         run: |
-          # 1. Konfigurasi Identitas Bot Innovation
-          git config --local user.email "bot-innovation@efektifpedia.com"
-          git config --local user.name "Aditya Innovation"
+          # 1. Amankan hasil generate ke folder penampungan sementara
+          mkdir temp_innovation
+          cp -r blog/* temp_innovation/
           
-          # 2. Tambahkan hasil generate ke folder blog/
+          # 2. Ambil (Clone) Repo Gudang secara bersih
+          git clone https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git gudang_innovation
+          
+          # 3. Pindahkan artikel baru dari penampungan ke folder repo gudang
+          cp -r temp_innovation/* gudang_innovation/blog/
+          
+          # 4. Masuk ke folder gudang untuk proses administrasi Git
+          cd gudang_innovation
+          git config user.email "bot-innovation@efektifpedia.com"
+          git config user.name "Efektifpedia Innovation Bot"
+          
           git add blog/
           git commit -m "Innovation: News Update - $(date)" || exit 0
           
-          # 3. Kirim ke Repo Gudang (External) menggunakan Token
-          # Menembak langsung ke repo Keyy26-git/efektifpedia-content
-          git push https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git main --force
+          # 5. Setor hasil akhir ke cabang utama Repo Gudang
+          git push origin main

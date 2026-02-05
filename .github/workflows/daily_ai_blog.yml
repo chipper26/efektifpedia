@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Checkout Repo Utama
         uses: actions/checkout@v3
+        with:
+          # Matikan kredensial bawaan agar tidak mengganggu proses clone eksternal
+          persist-credentials: false
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -27,22 +30,31 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{secrets.OPENROUTER_API_KEY}}
           PEXELS_API_KEY: ${{secrets.PEXELS_API_KEY}}
-        # Script Python ini akan menghasilkan file .md di folder blog/
+        # Script Python menghasilkan file di folder blog/ lokal
         run: python ai_writer.py
 
       - name: Push to Storage Repo (Keyy26-git)
         env:
-          # Token dari akun Keyy26-git yang disimpan di Secrets chipper26
+          # Pastikan Token ini milik Keyy26-git dengan izin 'repo'
           REMOTE_TOKEN: ${{ secrets.EXTERNAL_TOKEN }}
         run: |
-          # 1. Konfigurasi Identitas Bot
-          git config --local user.email "bot@efektifpedia.com"
-          git config --local user.name "Efektifpedia AI Bot"
+          # 1. Amankan hasil tulisan robot ke folder cadangan sementara
+          mkdir temp_news
+          cp -r blog/* temp_news/
           
-          # 2. Tambahkan file .md hasil generate tadi
+          # 2. Ambil (Clone) Repo Gudang secara utuh
+          git clone https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git gudang_news
+          
+          # 3. Pindahkan file berita dari folder cadangan ke folder repo gudang
+          cp -r temp_news/* gudang_news/blog/
+          
+          # 4. Masuk ke folder gudang, konfigurasi, dan setor (Commit)
+          cd gudang_news
+          git config user.email "bot-news@efektifpedia.com"
+          git config user.name "Efektifpedia AI News Bot"
+          
           git add blog/
           git commit -m "AI News: Auto Update Content - $(date)" || exit 0
           
-          # 3. Kirim ke Repo Gudang (External)
-          # Menggunakan URL dengan Token agar lolos izin akses (403 Forbidden)
-          git push https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git main --force
+          # 5. Push ke Main Repo Gudang
+          git push origin main

@@ -11,7 +11,7 @@ jobs:
   write:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repo
+      - name: Checkout Repo Utama
         uses: actions/checkout@v3
 
       - name: Setup Python
@@ -19,20 +19,29 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Requests
+      - name: Install Dependencies
         run: pip install requests
 
       - name: Generate Education Content
         env:
-          # Menggunakan API Key Cadangan sesuai permintaanmu
+          # Menggunakan API Key Cadangan sesuai setup kamu
           OPENROUTER_API_KEY_BACKUP: ${{secrets.OPENROUTER_API_KEY_BACKUP}}
           PEXELS_API_KEY: ${{secrets.PEXELS_API_KEY}}
         run: python lifestyle_writer.py
 
-      - name: Commit and Push
+      - name: Push to Storage Repo (Keyy26-git)
+        env:
+          # Mengambil token akses dari Secrets
+          REMOTE_TOKEN: ${{ secrets.EXTERNAL_TOKEN }}
         run: |
+          # 1. Konfigurasi Identitas Bot
           git config --local user.email "bot@efektifpedia.com"
-          git config --local user.name "Efektifpedia Bot"
-          git add .
-          git commit -m "Edu: Auto Update Content - $(date)" || exit 0
-          git push
+          git config --local user.name "Efektifpedia Edu Bot"
+          
+          # 2. Tambahkan hasil generate ke index Git
+          git add blog/
+          git commit -m "Edu Content: Auto Update - $(date)" || exit 0
+          
+          # 3. Kirim ke Repo Gudang (External) menggunakan Token
+          # Pastikan URL mengarah ke Keyy26-git/efektifpedia-content
+          git push https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git main --force

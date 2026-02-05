@@ -11,7 +11,7 @@ jobs:
   write:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repo
+      - name: Checkout Repo Utama
         uses: actions/checkout@v3
 
       - name: Setup Python
@@ -19,20 +19,29 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Requests
+      - name: Install Dependencies
         run: pip install requests
 
       - name: Generate Innovation Content
         env:
-          # Pastikan variabel ini sama dengan yang dipanggil di Python os.getenv
+          # Pastikan variabel ini sama dengan yang dipanggil di Python tutorial_writer.py
           API_AI_KEY: ${{ secrets.OPENROUTER_API_KEY_TUTORIAL }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: python tutorial_writer.py
 
-      - name: Commit and Push
+      - name: Push to Storage Repo (Keyy26-git)
+        env:
+          # Mengambil token akses dari Secrets repo chipper26
+          REMOTE_TOKEN: ${{ secrets.EXTERNAL_TOKEN }}
         run: |
+          # 1. Konfigurasi Identitas Bot Innovation
           git config --local user.email "bot-innovation@efektifpedia.com"
           git config --local user.name "Aditya Innovation"
-          git add .
+          
+          # 2. Tambahkan hasil generate ke folder blog/
+          git add blog/
           git commit -m "Innovation: News Update - $(date)" || exit 0
-          git push
+          
+          # 3. Kirim ke Repo Gudang (External) menggunakan Token
+          # Menembak langsung ke repo Keyy26-git/efektifpedia-content
+          git push https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git main --force

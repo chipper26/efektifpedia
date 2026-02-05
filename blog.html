@@ -114,14 +114,15 @@
         let currentPage = 1;
 
         async function fetchAllData() {
-            const repo = "chipper26/efektifpedia";
+            // --- UPDATE: SEKARANG MENGAMBIL DATA DARI REPO GUDANG ---
+            const repo = "Keyy26-git/efektifpedia-content";
             const container = document.getElementById('blog-container');
             
             try {
                 const response = await fetch(`https://api.github.com/repos/${repo}/contents/blog`);
                 const files = await response.json();
                 
-                // --- ALGORITMA SORTING TERBARU ---
+                // --- ALGORITMA SORTING TERBARU (Terbaru di Atas) ---
                 const mdFiles = files
                     .filter(f => f.name.endsWith('.md'))
                     .sort((a, b) => b.name.localeCompare(a.name));
@@ -145,6 +146,7 @@
                         const thumbMatch = fm.match(/thumbnail:\s*["']?(.*?)["']?$/m);
                         if (thumbMatch) {
                             let path = thumbMatch[1].trim().replace(/['"]/g, '');
+                            // Path gambar tetap disesuaikan jika gambar disimpan di repo yang sama dengan md
                             thumb = path.startsWith('http') ? path : `https://raw.githubusercontent.com/${repo}/main/${path}`;
                         }
 
@@ -161,7 +163,7 @@
                 handleRouting();
 
             } catch (e) {
-                container.innerHTML = "<p class='text-center p-5'>Gagal memproses daftar artikel.</p>";
+                container.innerHTML = "<p class='text-center p-5'>Gagal memproses daftar artikel dari gudang konten.</p>";
             }
         }
 
@@ -234,6 +236,7 @@
         function renderPopular() {
             const container = document.getElementById('popular-container');
             container.innerHTML = '';
+            // Populer diambil dari 5 teratas hasil sorting terbaru
             allPosts.slice(0, 5).forEach(post => {
                 container.innerHTML += `<li><a href="post.html?file=${post.fileName}" class="popular-link text-capitalize">${post.title}</a></li>`;
             });

@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Checkout Repo Utama
         uses: actions/checkout@v3
+        with:
+          # Penting agar bot punya izin melakukan manajemen file
+          persist-credentials: false 
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -31,17 +34,26 @@ jobs:
 
       - name: Push to Storage Repo (Keyy26-git)
         env:
-          # Mengambil token akses dari Secrets
+          # Token akses dari Secrets Repo Utama (chipper26)
           REMOTE_TOKEN: ${{ secrets.EXTERNAL_TOKEN }}
         run: |
-          # 1. Konfigurasi Identitas Bot
-          git config --local user.email "bot@efektifpedia.com"
+          # 1. Konfigurasi Identitas Bot agar dikenal oleh GitHub
+          git config --local user.email "bot-education@efektifpedia.com"
           git config --local user.name "Efektifpedia Edu Bot"
           
-          # 2. Tambahkan hasil generate ke index Git
+          # 2. Ambil data terbaru dari repo gudang agar tidak bentrok (Conflict)
+          # Kita buat remote sementara bernama 'gudang'
+          git remote add gudang https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git
+          
+          # Ambil (fetch) data dari sana
+          git fetch gudang main
+          
+          # 3. Tambahkan hasil generate artikel baru
           git add blog/
+          
+          # 4. Buat catatan perubahan (Commit)
           git commit -m "Edu Content: Auto Update - $(date)" || exit 0
           
-          # 3. Kirim ke Repo Gudang (External) menggunakan Token
-          # Pastikan URL mengarah ke Keyy26-git/efektifpedia-content
-          git push https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git main --force
+          # 5. Kirim (Push) hasil tulisan robot ke Repo Gudang
+          # Menggunakan token untuk menembus proteksi 403
+          git push gudang HEAD:main --force

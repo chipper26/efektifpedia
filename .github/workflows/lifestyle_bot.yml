@@ -14,8 +14,7 @@ jobs:
       - name: Checkout Repo Utama
         uses: actions/checkout@v3
         with:
-          # Penting agar bot punya izin melakukan manajemen file
-          persist-credentials: false 
+          persist-credentials: false
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -27,33 +26,32 @@ jobs:
 
       - name: Generate Education Content
         env:
-          # Menggunakan API Key Cadangan sesuai setup kamu
           OPENROUTER_API_KEY_BACKUP: ${{secrets.OPENROUTER_API_KEY_BACKUP}}
           PEXELS_API_KEY: ${{secrets.PEXELS_API_KEY}}
         run: python lifestyle_writer.py
 
       - name: Push to Storage Repo (Keyy26-git)
         env:
-          # Token akses dari Secrets Repo Utama (chipper26)
           REMOTE_TOKEN: ${{ secrets.EXTERNAL_TOKEN }}
         run: |
-          # 1. Konfigurasi Identitas Bot agar dikenal oleh GitHub
-          git config --local user.email "bot-education@efektifpedia.com"
-          git config --local user.name "Efektifpedia Edu Bot"
+          # 1. Simpan hasil tulisan bot ke folder sementara agar tidak hilang
+          mkdir temp_blog
+          cp -r blog/* temp_blog/
           
-          # 2. Ambil data terbaru dari repo gudang agar tidak bentrok (Conflict)
-          # Kita buat remote sementara bernama 'gudang'
-          git remote add gudang https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git
+          # 2. Masuk ke folder gudang konten secara bersih
+          # Kita tidak menggunakan git fetch untuk menghindari 'object mismatch'
+          git clone https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git gudang_repo
           
-          # Ambil (fetch) data dari sana
-          git fetch gudang main
+          # 3. Pindahkan hasil tulisan baru ke dalam folder repo gudang
+          cp -r temp_blog/* gudang_repo/blog/
           
-          # 3. Tambahkan hasil generate artikel baru
+          # 4. Masuk ke folder repo gudang dan lakukan pengiriman
+          cd gudang_repo
+          git config user.email "bot-education@efektifpedia.com"
+          git config user.name "Efektifpedia Edu Bot"
+          
           git add blog/
-          
-          # 4. Buat catatan perubahan (Commit)
           git commit -m "Edu Content: Auto Update - $(date)" || exit 0
           
-          # 5. Kirim (Push) hasil tulisan robot ke Repo Gudang
-          # Menggunakan token untuk menembus proteksi 403
-          git push gudang HEAD:main --force
+          # 5. Push langsung ke main
+          git push origin main

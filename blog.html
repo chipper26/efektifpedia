@@ -34,8 +34,9 @@
         .popular-item li::before { content: "●"; color: #0d6efd; margin-right: 10px; font-size: 0.8rem; }
         .popular-link { text-decoration: none; color: #333; font-weight: 500; font-size: 0.9rem; line-height: 1.4; }
         
-        .pagination .page-link { color: #0d6efd; border: none; margin: 0 3px; border-radius: 5px; font-weight: bold; }
+        .pagination .page-link { color: #0d6efd; border: none; margin: 0 3px; border-radius: 5px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .pagination .page-item.active .page-link { background-color: #0d6efd; color: white; }
+        .pagination .page-item.disabled .page-link { color: #ccc; pointer-events: none; }
 
         @media (max-width: 768px) {
             .card-blog img { height: 200px; }
@@ -120,8 +121,6 @@
             try {
                 const response = await fetch(`https://api.github.com/repos/${repo}/contents/blog`);
                 const files = await response.json();
-                
-                // Ambil semua file .md
                 const mdFiles = files.filter(f => f.name.endsWith('.md'));
 
                 const loadedPosts = await Promise.all(mdFiles.map(async file => {
@@ -132,13 +131,11 @@
                     let thumb = "https://via.placeholder.com/800x450?text=Efektifpedia";
                     let author = "Tim Efektifpedia";
                     let category = "Uncategorized";
-                    let dateObj = new Date(0); // Default ke tahun 1970 jika gagal baca
+                    let dateObj = new Date(0);
                     let dateStr = "";
 
                     if (markdown.startsWith('---')) {
                         const fm = markdown.split('---')[1];
-                        
-                        // Regex sakti untuk ambil data di baris mana pun
                         const getVal = (key) => {
                             const regex = new RegExp(`${key}:\\s*["']?(.*?)["']?\\s*(?:\\r?\\n|$)`, 'i');
                             const match = fm.match(regex);
@@ -163,15 +160,13 @@
                     return { fileName: file.name, title, author, category, thumb, dateStr, dateObj };
                 }));
 
-                // ALGORITMA SORTING BERDASARKAN WAKTU ASLI (Terbaru di Atas)
                 allPosts = loadedPosts.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
-
                 renderPopular();
                 handleRouting();
 
             } catch (e) {
                 console.error("Error:", e);
-                container.innerHTML = "<p class='text-center p-5'>Gagal memproses daftar artikel dari gudang konten.</p>";
+                container.innerHTML = "<p class='text-center p-5'>Gagal memproses daftar artikel.</p>";
             }
         }
 
@@ -204,7 +199,7 @@
             const currentItems = filteredPosts.slice(start, start + postsPerPage);
 
             if (currentItems.length === 0) {
-                container.innerHTML = "<p class='text-center p-5'>Belum ada artikel di kategori ini.</p>";
+                container.innerHTML = "<p class='text-center p-5'>Belum ada artikel.</p>";
                 document.getElementById('pagination-container').innerHTML = '';
                 return;
             }
@@ -232,18 +227,44 @@
 
             if (totalPages <= 1) return;
 
-            for (let i = 1; i <= totalPages; i++) {
+            // Tombol First & Prev
+            pagination.innerHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <button class="page-link" onclick="renderBlogPage(1)" title="Halaman Pertama">«</button>
+                </li>
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <button class="page-link" onclick="renderBlogPage(${currentPage - 1})" title="Sebelumnya">‹</button>
+                </li>`;
+
+            // Logika Jendela Nomor (Maksimal 5 nomor tampil)
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                if (i < 1) continue;
                 pagination.innerHTML += `
                     <li class="page-item ${i === currentPage ? 'active' : ''}">
                         <button class="page-link" onclick="renderBlogPage(${i})">${i}</button>
                     </li>`;
             }
+
+            // Tombol Next & Last
+            pagination.innerHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <button class="page-link" onclick="renderBlogPage(${currentPage + 1})" title="Selanjutnya">›</button>
+                </li>
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <button class="page-link" onclick="renderBlogPage(${totalPages})" title="Halaman Terakhir">»</button>
+                </li>`;
         }
 
         function renderPopular() {
             const container = document.getElementById('popular-container');
             container.innerHTML = '';
-            // Populer tetap 5 teratas hasil sorting waktu
             allPosts.slice(0, 5).forEach(post => {
                 container.innerHTML += `<li><a href="post.html?file=${post.fileName}" class="popular-link text-capitalize">${post.title}</a></li>`;
             });

@@ -14,6 +14,7 @@ jobs:
       - name: Checkout Repo Utama
         uses: actions/checkout@v3
         with:
+          # Matikan kredensial bawaan agar tidak mengganggu proses clone eksternal
           persist-credentials: false
 
       - name: Setup Python
@@ -32,26 +33,29 @@ jobs:
 
       - name: Push to Storage Repo (Keyy26-git)
         env:
+          # Token ini harus memiliki izin 'repo' penuh
           REMOTE_TOKEN: ${{ secrets.EXTERNAL_TOKEN }}
         run: |
-          # 1. Simpan hasil tulisan bot ke folder sementara agar tidak hilang
+          # 1. Amankan hasil tulisan robot ke folder cadangan sementara
           mkdir temp_blog
           cp -r blog/* temp_blog/
           
-          # 2. Masuk ke folder gudang konten secara bersih
-          # Kita tidak menggunakan git fetch untuk menghindari 'object mismatch'
+          # 2. Ambil (Clone) Repo Gudang secara utuh dan bersih
           git clone https://x-access-token:${REMOTE_TOKEN}@github.com/Keyy26-git/efektifpedia-content.git gudang_repo
           
-          # 3. Pindahkan hasil tulisan baru ke dalam folder repo gudang
+          # 3. Pindahkan file edukasi dari folder cadangan ke folder repo gudang
           cp -r temp_blog/* gudang_repo/blog/
           
-          # 4. Masuk ke folder repo gudang dan lakukan pengiriman
+          # 4. Masuk ke folder gudang, konfigurasi, dan setor (Commit)
           cd gudang_repo
           git config user.email "bot-education@efektifpedia.com"
           git config user.name "Efektifpedia Edu Bot"
           
+          # Pastikan index-pack tidak error dengan add yang spesifik
           git add blog/
-          git commit -m "Edu Content: Auto Update - $(date)" || exit 0
           
-          # 5. Push langsung ke main
+          # Gunakan pesan commit yang rapi seperti versi work
+          git commit -m "Edu Content: Auto Update Content - $(date)" || exit 0
+          
+          # 5. Push ke Main Repo Gudang menggunakan origin main secara eksplisit
           git push origin main

@@ -121,12 +121,10 @@
                 const response = await fetch(`https://api.github.com/repos/${repo}/contents/blog`);
                 const files = await response.json();
                 
-                // Urutkan berdasarkan nama file (Terbaru di Atas)
-                const mdFiles = files
-                    .filter(f => f.name.endsWith('.md'))
-                    .sort((a, b) => b.name.localeCompare(a.name));
+                // Ambil semua file .md
+                const mdFiles = files.filter(f => f.name.endsWith('.md'));
 
-                allPosts = await Promise.all(mdFiles.map(async file => {
+                const loadedPosts = await Promise.all(mdFiles.map(async file => {
                     const rawRes = await fetch(file.download_url);
                     const markdown = await rawRes.text();
                     
@@ -134,12 +132,13 @@
                     let thumb = "https://via.placeholder.com/800x450?text=Efektifpedia";
                     let author = "Tim Efektifpedia";
                     let category = "Uncategorized";
+                    let dateObj = new Date(0); // Default ke tahun 1970 jika gagal baca
                     let dateStr = "";
 
                     if (markdown.startsWith('---')) {
                         const fm = markdown.split('---')[1];
                         
-                        // Fungsi ekstraksi metadata yang lebih kuat
+                        // Regex sakti untuk ambil data di baris mana pun
                         const getVal = (key) => {
                             const regex = new RegExp(`${key}:\\s*["']?(.*?)["']?\\s*(?:\\r?\\n|$)`, 'i');
                             const match = fm.match(regex);
@@ -150,25 +149,28 @@
                         author = getVal('author') || author;
                         category = getVal('category') || category;
                         
+                        const dateVal = getVal('date');
+                        if (dateVal) {
+                            dateObj = new Date(dateVal);
+                            dateStr = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                        }
+
                         const thumbPath = getVal('thumbnail');
                         if (thumbPath) {
                             thumb = thumbPath.startsWith('http') ? thumbPath : `https://raw.githubusercontent.com/${repo}/main/${thumbPath}`;
                         }
-
-                        const dateVal = getVal('date');
-                        if (dateVal) {
-                            const d = new Date(dateVal);
-                            dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-                        }
                     }
-                    return { fileName: file.name, title, author, category, thumb, dateStr };
+                    return { fileName: file.name, title, author, category, thumb, dateStr, dateObj };
                 }));
+
+                // ALGORITMA SORTING BERDASARKAN WAKTU ASLI (Terbaru di Atas)
+                allPosts = loadedPosts.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
 
                 renderPopular();
                 handleRouting();
 
             } catch (e) {
-                console.error(e);
+                console.error("Error:", e);
                 container.innerHTML = "<p class='text-center p-5'>Gagal memproses daftar artikel dari gudang konten.</p>";
             }
         }
@@ -183,7 +185,6 @@
             });
 
             if (cat) {
-                // Pencocokan kategori tidak sensitif huruf besar/kecil
                 filteredPosts = allPosts.filter(p => p.category.toLowerCase() === cat.toLowerCase());
                 document.getElementById('display-title').innerText = `KATEGORI: ${cat}`;
             } else {
@@ -200,8 +201,7 @@
             container.innerHTML = '';
 
             const start = (page - 1) * postsPerPage;
-            const end = start + postsPerPage;
-            const currentItems = filteredPosts.slice(start, end);
+            const currentItems = filteredPosts.slice(start, start + postsPerPage);
 
             if (currentItems.length === 0) {
                 container.innerHTML = "<p class='text-center p-5'>Belum ada artikel di kategori ini.</p>";
@@ -243,6 +243,7 @@
         function renderPopular() {
             const container = document.getElementById('popular-container');
             container.innerHTML = '';
+            // Populer tetap 5 teratas hasil sorting waktu
             allPosts.slice(0, 5).forEach(post => {
                 container.innerHTML += `<li><a href="post.html?file=${post.fileName}" class="popular-link text-capitalize">${post.title}</a></li>`;
             });
